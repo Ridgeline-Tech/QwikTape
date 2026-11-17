@@ -38,6 +38,9 @@ android {
     lint {
         abortOnError = true
         warningsAsErrors = true
+        // Hosted runners may carry the Android 17 preview SDK. Keep the app on
+        // current stable API 36 until adopting preview runtime behavior is deliberate.
+        disable += "OldTargetApi"
     }
 }
 
