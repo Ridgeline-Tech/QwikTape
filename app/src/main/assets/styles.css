@@ -1,0 +1,157 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ink: #173f36;
+  --accent: #2f6f5e;
+  --paper: #f4f0e6;
+  --paper-deep: #e6dfcf;
+  --line: #c9bfaa;
+  --error: #9a2f2f;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  background: var(--paper);
+  color: #222;
+  overflow: hidden;
+}
+
+button, input, select { font: inherit; }
+
+button {
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  color: inherit;
+  padding: 0.45rem 0.65rem;
+}
+
+button:active { transform: translateY(1px); }
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: calc(0.6rem + env(safe-area-inset-top)) 0.75rem 0.6rem;
+  background: var(--ink);
+  color: white;
+}
+
+.brand { display: flex; align-items: center; gap: 0.5rem; font-weight: 750; }
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.35rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: ui-monospace, monospace;
+}
+
+.actions { display: flex; gap: 0.35rem; overflow-x: auto; }
+.actions button { border-color: #ffffff47; background: #ffffff12; white-space: nowrap; }
+
+.tabs {
+  display: flex;
+  min-height: 2.8rem;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper-deep);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 8rem;
+  max-width: 13rem;
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  padding-inline: 0.8rem;
+}
+
+.tab[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 700; }
+.tab-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tab-close { margin-left: auto; opacity: 0.55; font-size: 1.15rem; }
+
+main { min-height: 0; position: relative; }
+
+#tape {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 1.1rem clamp(0.8rem, 5vw, 2.2rem) 4rem;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 1.62rem, #83765d16 1.62rem 1.67rem),
+    var(--paper);
+  color: #25221d;
+  caret-color: var(--accent);
+  font: 500 1rem/1.67rem ui-monospace, "Cascadia Mono", "Roboto Mono", monospace;
+  tab-size: 2;
+  white-space: pre;
+}
+
+footer {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.8rem;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem calc(0.45rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--paper-deep);
+  font-size: 0.78rem;
+}
+
+#diagnostics { color: var(--error); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+dialog {
+  width: min(92vw, 34rem);
+  max-height: 82vh;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--paper);
+  color: #222;
+}
+
+dialog::backdrop { background: #0b1e19a8; }
+.dialog-shell { display: grid; gap: 0.9rem; padding: 1rem; overflow: auto; }
+.dialog-shell > header { display: flex; align-items: center; justify-content: space-between; }
+.dialog-shell h2 { margin: 0; color: var(--ink); }
+.dialog-shell label:not(.check) { display: grid; gap: 0.35rem; }
+.dialog-shell input, .dialog-shell select { width: 100%; padding: 0.55rem; }
+.check { display: flex; gap: 0.55rem; align-items: start; }
+.check input { width: auto; margin-top: 0.2rem; }
+.dialog-shell menu { display: flex; justify-content: end; gap: 0.5rem; padding: 0; margin: 0; }
+.note { color: #625c51; font-size: 0.88rem; }
+
+.browse-list { display: grid; gap: 0.45rem; }
+.browse-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 0.4rem; align-items: center; }
+.browse-open { text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.danger { color: var(--error); }
+.sr-only { position: absolute; width: 1px; height: 1px; clip: rect(0 0 0 0); overflow: hidden; }
+
+@media (max-width: 720px) {
+  .app-header { align-items: start; }
+  .brand span:last-child { display: none; }
+  .actions { width: 100%; justify-content: end; }
+  .actions button { padding-inline: 0.55rem; }
+  #tape { font-size: 0.94rem; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1c211f; --paper-deep: #252b28; --line: #46514c; }
+  body, dialog { color: #f0eee9; }
+  #tape { color: #f2eee5; background: repeating-linear-gradient(to bottom, transparent 0 1.62rem, #ffffff0b 1.62rem 1.67rem), var(--paper); }
+  .note { color: #c8c0b3; }
+}

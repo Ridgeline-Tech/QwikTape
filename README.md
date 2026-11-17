@@ -7,6 +7,67 @@ Do calculations, annotate it like you would on a paper "qwikly".
 </p>
 <img src="build/main-screen.png" width="750">
 
+## Android WebView port
+
+This fork adds a plain QwikTape calculator for Android while retaining the
+original desktop source and MIT license. The Android app uses a minimal Kotlin
+WebView shell around locally bundled HTML, CSS, and JavaScript. It requests no
+`INTERNET` permission and blocks navigation away from its synthetic local
+origin. No Sciter component is included in the APK.
+
+The Android tape engine is a pure JavaScript module:
+
+```text
+{ text, locale, decimalDigits, padding } -> { edits, tokens, diagnostics, variables }
+```
+
+It reuses the upstream Chevrotain grammar and replaces QuickJS operator-
+overloaded `BigDecimal` values with explicit decimal.js operations. Decimal
+addition and multiplication remain exact within the configured 1,000-digit
+working precision. Non-terminating division is rounded half-even to the
+upstream maximum of 113 fractional digits. Display precision remains
+configurable from 0 to 50 digits.
+
+The Android UI includes editable free-text tapes, result blocks, annotations,
+named values, local persistence, open/close/cycle tabs, browse/rename/delete,
+locale and padding settings, optional `×`/`÷` entry, optional Escape-to-clear,
+and keyboard undo/redo that reparses downstream totals. It intentionally adds
+no Pocket Builder construction features.
+
+PDF export is deferred. Production signing, release publication, Zac's Apps
+catalog registration, and device installation are separate decisions and are
+not configured or performed by this repository change.
+
+### Golden behavior method
+
+The behavior oracle is upstream commit
+`e781115a9dd2168e4933f95ed7eb88c82a5c9318` (tree
+`f739c7e31c24cdfc36b7965e7502af35c3248e92`).
+`tests/run-upstream-golden.qjs.js` runs the unchanged upstream
+`tests/sciter-tape-grammar.tests.js` under QuickJS 2024-01-13 with its bignum
+extensions. The compatibility surface supplies only `sciter.import` and the
+upstream test-runner assertions. The parser, evaluator, Chevrotain 10.5.0,
+BigDecimal behavior, grammar tests, and `src/storage/seeds.js` inputs remain
+the pinned upstream code. Its captured reference is
+`tests/upstream-e781115a.golden.json`.
+
+The first capture passed 14 locale groups, 196 cases, and 980 assertions. CI
+then compares the Android engine with every focused golden case and both full
+seed tapes, in addition to focused unit tests.
+
+### Build and test
+
+```sh
+npm ci
+npm run check
+./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+```
+
+The debug APK is intentionally signed only with Gradle's throwaway debug key.
+CI checks its package/version with `aapt2`, verifies its debug signature with
+`apksigner`, rejects `INTERNET`, and rejects Sciter/native desktop binaries.
+See `NOTICE` for third-party attribution and the dated port change notice.
+
 
 # Features
 * Write text, calculations, and annotations with the same ease as you would on paper or in a book.
@@ -29,7 +90,7 @@ Do calculations, annotate it like you would on a paper "qwikly".
        900.00
 ```
 * Expressions use operator precedence. `myvar = 100 + 200 × 3` myvar is `700`.
-* All calculations are performed with infinite precision, resulting in highly accurate and reliable results, so [`0.1 + 0.2 = 0.3`](https://0.30000000000000004.com/)
+* Decimal arithmetic preserves results such as [`0.1 + 0.2 = 0.3`](https://0.30000000000000004.com/); non-terminating division follows the documented finite, half-even precision fallback.
 * Export your tape as PDF <img src="src/assets/pdf.svg" width="24">.
 
 <br></br>

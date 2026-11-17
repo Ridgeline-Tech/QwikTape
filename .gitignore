@@ -1,6 +1,16 @@
+node_modules/
+.gradle/
+.gradle-user/
+.android-user/
+.kotlin/
+build/
+app/build/
+local.properties
+*.jks
+*.keystore
 *.exe
 *.dll
-.vs
+.vs/
 main/resources.cpp
 *.aps
 .DS_Store

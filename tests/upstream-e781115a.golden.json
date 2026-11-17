@@ -1,0 +1,2075 @@
+{
+  "source": {
+    "repository": "https://github.com/4silvertooth/QwikTape",
+    "commit": "e781115a9dd2168e4933f95ed7eb88c82a5c9318",
+    "tree": "f739c7e31c24cdfc36b7965e7502af35c3248e92",
+    "quickJs": "2024-01-13 --bignum"
+  },
+  "upstreamGrammar": {
+    "groups": 14,
+    "cases": 196,
+    "assertions": 980,
+    "failures": []
+  },
+  "cases": {
+    "leftToRight": {
+      "text": "100\n+ 200\n× 3\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "900.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "900.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 3,
+              "startColumn": 4,
+              "endLine": 3,
+              "endColumn": 4
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "900"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 5,
+            "formatting": "200.00",
+            "padding": 4,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3",
+            "startLine": 3,
+            "startColumn": 3,
+            "endLine": 3,
+            "endColumn": 3,
+            "formatting": "3.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3"
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "assignmentPrecedence": {
+      "text": "answer = 100 + 200 × 3\n",
+      "result": {
+        "edits": [],
+        "tokens": [
+          {
+            "type": "Variable",
+            "image": "answer",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 6,
+            "tooltip": "700.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 10,
+            "endLine": 1,
+            "endColumn": 12,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "700"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 1,
+            "startColumn": 16,
+            "endLine": 1,
+            "endColumn": 18,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "600"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3",
+            "startLine": 1,
+            "startColumn": 22,
+            "endLine": 1,
+            "endColumn": 22,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3"
+          }
+        ],
+        "variables": {
+          "answer": "700"
+        },
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "addPercent": {
+      "text": "100\n+ 5%\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "105.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "105.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 2,
+              "startColumn": 5,
+              "endLine": 2,
+              "endColumn": 5
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "105"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 3,
+            "formatting": "5.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "Percentage",
+            "image": "%",
+            "startLine": 2,
+            "startColumn": 4,
+            "endLine": 2,
+            "endColumn": 4,
+            "formatting": "% ⥱ 5.00",
+            "padding": 0,
+            "ws": 0
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "subtractPercent": {
+      "text": "100\n- 5%\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "95.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "95.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 2,
+              "startColumn": 5,
+              "endLine": 2,
+              "endColumn": 5
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "95"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 3,
+            "formatting": "5.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "Percentage",
+            "image": "%",
+            "startLine": 2,
+            "startColumn": 4,
+            "endLine": 2,
+            "endColumn": 4,
+            "formatting": "% ⥱ 5.00",
+            "padding": 0,
+            "ws": 0
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "multiplyPercent": {
+      "text": "100\n× 5%\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "5.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "5.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 2,
+              "startColumn": 5,
+              "endLine": 2,
+              "endColumn": 5
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 3,
+            "formatting": "5.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "Percentage",
+            "image": "%",
+            "startLine": 2,
+            "startColumn": 4,
+            "endLine": 2,
+            "endColumn": 4,
+            "formatting": "% ⥱ 0.05",
+            "padding": 0,
+            "ws": 0
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "dividePercent": {
+      "text": "100\n÷ 5%\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "2,000.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "2,000.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 2,
+              "startColumn": 5,
+              "endLine": 2,
+              "endColumn": 5
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "2000"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 3,
+            "formatting": "5.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "Percentage",
+            "image": "%",
+            "startLine": 2,
+            "startColumn": 4,
+            "endLine": 2,
+            "endColumn": 4,
+            "formatting": "% ⥱ 0.05",
+            "padding": 0,
+            "ws": 0
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "powerPercent": {
+      "text": "100\n^ 50%\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "100.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "100.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 2,
+              "startColumn": 6,
+              "endLine": 2,
+              "endColumn": 6
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "50",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 4,
+            "formatting": "50.00",
+            "padding": 5,
+            "ws": 1,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: invalid operation",
+            "value": "50"
+          },
+          {
+            "type": "Percentage",
+            "image": "%",
+            "startLine": 2,
+            "startColumn": 5,
+            "endLine": 2,
+            "endColumn": 5,
+            "formatting": "% ⥱ 0.50",
+            "padding": 0,
+            "ws": 0
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "divideByZero": {
+      "text": "100\n÷ 0\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "100.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "100.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 2,
+              "startColumn": 4,
+              "endLine": 2,
+              "endColumn": 4
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "0",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 3,
+            "formatting": "0.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: division by zero",
+            "value": "0"
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "continuation": {
+      "text": "100\n+ 200\n═══\n300\n× 3\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "900.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "900.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 5,
+              "startColumn": 4,
+              "endLine": 5,
+              "endColumn": 4
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "900"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 5,
+            "formatting": "200.00",
+            "padding": 4,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "300",
+            "startLine": 4,
+            "startColumn": 1,
+            "endLine": 4,
+            "endColumn": 3,
+            "formatting": "300.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "Result"
+            ],
+            "value": "300"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3",
+            "startLine": 5,
+            "startColumn": 3,
+            "endLine": 5,
+            "endColumn": 3,
+            "formatting": "3.00",
+            "padding": 6,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3"
+          }
+        ],
+        "variables": {},
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "resultCapture": {
+      "text": "100\n+ 200\n═══\n300 = total\n+ total\n",
+      "result": {
+        "edits": [
+          {
+            "type": 2,
+            "value": "600.00",
+            "padding": 12,
+            "token": {
+              "padding": 12,
+              "value": "600.00"
+            },
+            "node": {
+              "image": "\n",
+              "startLine": 5,
+              "startColumn": 8,
+              "endLine": 5,
+              "endColumn": 8
+            }
+          }
+        ],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 1,
+            "startColumn": 1,
+            "endLine": 1,
+            "endColumn": 3,
+            "formatting": "100.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "600"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 2,
+            "startColumn": 3,
+            "endLine": 2,
+            "endColumn": 5,
+            "formatting": "200.00",
+            "padding": 4,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "300",
+            "startLine": 4,
+            "startColumn": 1,
+            "endLine": 4,
+            "endColumn": 3,
+            "formatting": "300.00",
+            "padding": 6,
+            "ws": 0,
+            "style": [
+              "Result"
+            ],
+            "value": "300"
+          },
+          {
+            "type": "Identifier",
+            "image": "total",
+            "startLine": 5,
+            "startColumn": 3,
+            "endLine": 5,
+            "endColumn": 7,
+            "padding": 5,
+            "ws": 1,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "300.00",
+            "value": "300"
+          }
+        ],
+        "variables": {
+          "total": "300"
+        },
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    }
+  },
+  "seeds": {
+    "intro": {
+      "text": "Welcome,\n\nThis is a QwikTape document,\nDo calculations easily, neatly with auto indent \nand formatting,\n\n      300 my last balance\n-       5.22 food \n════════════\n      294.78 this is my new balance\n\n\nincome = 2200 assign values to a variable name\n\n      294.78 \n+     income\n════════════\n     2494.78 = balance assign results to variable\n\n     balance     using varialbe from above\n-      25% ⥱ 623.7 damn high taxes\n════════════\n     1871.09 \n-      50 continue calculations\n-      20 \n════════════\n     1801.09 \n\nTry changing the value of variable 'income' above,\nall following values will recalculate.\n\npi =  3.141592653\nradius = 5\n\nAssign expression to a variable, it will follow \nrules of operator precedence,\narea = pi × radius ^ 2 \n\n        area hover cursor over variable name\n+     600\n════════════\n      678.54\n÷     0 hover cursor over errors\n-    -100 subtract negetive numbers\n════════════\n      778.54 erroneous operations skipped\n\nDocument is auto saved. Use the bookmark menu on top left to find all\nthe documents added.\n\nStart by creating a new document, using the [+] button on the title bar. \n\n\n",
+      "result": {
+        "edits": [],
+        "tokens": [
+          {
+            "type": "NumberLiteral",
+            "image": "300",
+            "startLine": 7,
+            "startColumn": 7,
+            "endLine": 7,
+            "endColumn": 9,
+            "formatting": "300.00",
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "294.78"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5.22",
+            "startLine": 8,
+            "startColumn": 9,
+            "endLine": 8,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "5.22"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "294.78",
+            "startLine": 10,
+            "startColumn": 7,
+            "endLine": 10,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "294.78"
+          },
+          {
+            "type": "Variable",
+            "image": "income",
+            "startLine": 13,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 6,
+            "tooltip": "2200.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2200",
+            "startLine": 13,
+            "startColumn": 10,
+            "endLine": 13,
+            "endColumn": 13,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "2200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "294.78",
+            "startLine": 15,
+            "startColumn": 7,
+            "endLine": 15,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "2494.78"
+          },
+          {
+            "type": "Identifier",
+            "image": "income",
+            "startLine": 16,
+            "startColumn": 7,
+            "endLine": 16,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 5,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "2200.00",
+            "value": "2200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2494.78",
+            "startLine": 18,
+            "startColumn": 6,
+            "endLine": 18,
+            "endColumn": 12,
+            "formatting": "2,494.78",
+            "padding": -1,
+            "ws": 5,
+            "style": [
+              "Result"
+            ],
+            "value": "2494.78"
+          },
+          {
+            "type": "Identifier",
+            "image": "balance",
+            "startLine": 20,
+            "startColumn": 6,
+            "endLine": 20,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 5,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "2494.78",
+            "value": "1801.085"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "25",
+            "startLine": 21,
+            "startColumn": 8,
+            "endLine": 21,
+            "endColumn": 9,
+            "formatting": "25.00",
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "25"
+          },
+          {
+            "type": "Percentage",
+            "image": "% ⥱ 623.7",
+            "startLine": 21,
+            "startColumn": 10,
+            "endLine": 21,
+            "endColumn": 18,
+            "formatting": "% ⥱ 623.70",
+            "padding": 0,
+            "ws": 0
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "1871.09",
+            "startLine": 23,
+            "startColumn": 6,
+            "endLine": 23,
+            "endColumn": 12,
+            "formatting": "1,871.09",
+            "padding": -1,
+            "ws": 5,
+            "style": [
+              "Result"
+            ],
+            "value": "1871.09"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "50",
+            "startLine": 24,
+            "startColumn": 8,
+            "endLine": 24,
+            "endColumn": 9,
+            "formatting": "50.00",
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "50"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "20",
+            "startLine": 25,
+            "startColumn": 8,
+            "endLine": 25,
+            "endColumn": 9,
+            "formatting": "20.00",
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "20"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "1801.09",
+            "startLine": 27,
+            "startColumn": 6,
+            "endLine": 27,
+            "endColumn": 12,
+            "formatting": "1,801.09",
+            "padding": -1,
+            "ws": 5,
+            "style": [
+              "Result"
+            ],
+            "value": "1801.09"
+          },
+          {
+            "type": "Variable",
+            "image": "pi",
+            "startLine": 32,
+            "startColumn": 1,
+            "endLine": 32,
+            "endColumn": 2,
+            "tooltip": "3.14"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3.141592653",
+            "startLine": 32,
+            "startColumn": 7,
+            "endLine": 32,
+            "endColumn": 17,
+            "ws": 2,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3.141592653"
+          },
+          {
+            "type": "Variable",
+            "image": "radius",
+            "startLine": 33,
+            "startColumn": 1,
+            "endLine": 33,
+            "endColumn": 6,
+            "tooltip": "5.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5",
+            "startLine": 33,
+            "startColumn": 10,
+            "endLine": 33,
+            "endColumn": 10,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "Variable",
+            "image": "area",
+            "startLine": 37,
+            "startColumn": 1,
+            "endLine": 37,
+            "endColumn": 4,
+            "tooltip": "78.54"
+          },
+          {
+            "type": "Identifier",
+            "image": "pi",
+            "startLine": 37,
+            "startColumn": 8,
+            "endLine": 37,
+            "endColumn": 9,
+            "ws": 1,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "3.14",
+            "value": "78.539816325"
+          },
+          {
+            "type": "Identifier",
+            "image": "radius",
+            "startLine": 37,
+            "startColumn": 13,
+            "endLine": 37,
+            "endColumn": 18,
+            "ws": 1,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "5.00",
+            "value": "25"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2",
+            "startLine": 37,
+            "startColumn": 22,
+            "endLine": 37,
+            "endColumn": 22,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "2"
+          },
+          {
+            "type": "Identifier",
+            "image": "area",
+            "startLine": 39,
+            "startColumn": 9,
+            "endLine": 39,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 8,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "78.54",
+            "value": "778.539816325"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "600",
+            "startLine": 40,
+            "startColumn": 7,
+            "endLine": 40,
+            "endColumn": 9,
+            "formatting": "600.00",
+            "padding": 0,
+            "ws": 5,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "600"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "678.54",
+            "startLine": 42,
+            "startColumn": 7,
+            "endLine": 42,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "678.54"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "0",
+            "startLine": 43,
+            "startColumn": 7,
+            "endLine": 43,
+            "endColumn": 7,
+            "formatting": "0.00",
+            "padding": 2,
+            "ws": 5,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: division by zero",
+            "value": "0"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "-100",
+            "startLine": 44,
+            "startColumn": 6,
+            "endLine": 44,
+            "endColumn": 9,
+            "formatting": "-100.00",
+            "padding": 0,
+            "ws": 4,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "-100"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "778.54",
+            "startLine": 46,
+            "startColumn": 7,
+            "endLine": 46,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "778.54"
+          }
+        ],
+        "variables": {
+          "income": "2200",
+          "balance": "2494.78",
+          "pi": "3.141592653",
+          "radius": "5",
+          "area": "78.539816325"
+        },
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    },
+    "tests": {
+      "text": "Some tests,\n\ntest1 = 0.1 + 0.2\ntest2 = 1 + 2 × 3 answer 7, operator precedence in expressions\n\nCalculation are as you type it on a calculator,\n        1.00\n+       2.00\n×       3.00\n════════════\n        9.00 no operator precedence\n\ntest3 = 5^500 hover over test3, large values\ntest3 = 500 errors: variable already defined\n\n\ncalculations using finite precision if result over range\ntest4 = 100 ÷ 300 \ntest5 = 100 ÷ 0 divide by zero\n\n\n      100.00\n÷       0.00 division by zero error\n════════════\n      100.00 skipping error calculations\n\na = 100 b = 200\n\na = 500\nb = 300\n           a\n+          b\n════════════\n      300.00 = c\n+       5.00% ⥱ 15.00 adding 5%, c = 315\n+          c   adding c to itself\n════════════\n      615.00\n×       5.00% ⥱ 0.05 multiplying 615.00 by 0.05\n════════════\n       30.75\n\n-     100.00 negation\n-    -200.00 subtracting negetive numbers\n════════════\n      100.00\n\ntest line text with operators + - × ÷ % ^ -100 100+200\n\nexp = 100 + 200 ÷ (500 + 20 - 520) divide by zero error in evaluation\nexp1 = 1+2×((2+3)÷(25+25-50))\nexp2 = 100 (200+200) no operator before '(' is dot product\n\n      100.00\n÷       test divide by undefined variable\n════════════\n      100.00\n",
+      "result": {
+        "edits": [],
+        "tokens": [
+          {
+            "type": "Variable",
+            "image": "test1",
+            "startLine": 3,
+            "startColumn": 1,
+            "endLine": 3,
+            "endColumn": 5,
+            "tooltip": "0.30"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "0.1",
+            "startLine": 3,
+            "startColumn": 9,
+            "endLine": 3,
+            "endColumn": 11,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "0.3"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "0.2",
+            "startLine": 3,
+            "startColumn": 15,
+            "endLine": 3,
+            "endColumn": 17,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "0.2"
+          },
+          {
+            "type": "Variable",
+            "image": "test2",
+            "startLine": 4,
+            "startColumn": 1,
+            "endLine": 4,
+            "endColumn": 5,
+            "tooltip": "7.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "1",
+            "startLine": 4,
+            "startColumn": 9,
+            "endLine": 4,
+            "endColumn": 9,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "7"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2",
+            "startLine": 4,
+            "startColumn": 13,
+            "endLine": 4,
+            "endColumn": 13,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "6"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3",
+            "startLine": 4,
+            "startColumn": 17,
+            "endLine": 4,
+            "endColumn": 17,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "1.00",
+            "startLine": 7,
+            "startColumn": 9,
+            "endLine": 7,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 8,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "9"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2.00",
+            "startLine": 8,
+            "startColumn": 9,
+            "endLine": 8,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "2"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3.00",
+            "startLine": 9,
+            "startColumn": 9,
+            "endLine": 9,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "9.00",
+            "startLine": 11,
+            "startColumn": 9,
+            "endLine": 11,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 8,
+            "style": [
+              "Result"
+            ],
+            "value": "9"
+          },
+          {
+            "type": "Variable",
+            "image": "test3",
+            "startLine": 13,
+            "startColumn": 1,
+            "endLine": 13,
+            "endColumn": 5,
+            "tooltip": "30549363634996046820519793932136176997894027405723266638936139092812916265247204577018572351080152282568751526935904671553178534278042839697351331142009178896307244205337728522220355888195318837008165086679301794879136633899370525163649789227021200352450820912190874482021196014946372110934030798550767828365183620409339937395998276770114898681640625.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5",
+            "startLine": 13,
+            "startColumn": 9,
+            "endLine": 13,
+            "endColumn": 9,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "30549363634996046820519793932136176997894027405723266638936139092812916265247204577018572351080152282568751526935904671553178534278042839697351331142009178896307244205337728522220355888195318837008165086679301794879136633899370525163649789227021200352450820912190874482021196014946372110934030798550767828365183620409339937395998276770114898681640625"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "500",
+            "startLine": 13,
+            "startColumn": 11,
+            "endLine": 13,
+            "endColumn": 13,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "500"
+          },
+          {
+            "type": "Variable",
+            "image": "test3",
+            "startLine": 14,
+            "startColumn": 1,
+            "endLine": 14,
+            "endColumn": 5,
+            "style": [
+              "Error"
+            ],
+            "tooltip": "Already defined."
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "500",
+            "startLine": 14,
+            "startColumn": 9,
+            "endLine": 14,
+            "endColumn": 11,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "500"
+          },
+          {
+            "type": "Variable",
+            "image": "test4",
+            "startLine": 18,
+            "startColumn": 1,
+            "endLine": 18,
+            "endColumn": 5,
+            "tooltip": "0.33"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 18,
+            "startColumn": 9,
+            "endLine": 18,
+            "endColumn": 11,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "0.33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "300",
+            "startLine": 18,
+            "startColumn": 15,
+            "endLine": 18,
+            "endColumn": 17,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "300"
+          },
+          {
+            "type": "Variable",
+            "image": "test5",
+            "startLine": 19,
+            "startColumn": 1,
+            "endLine": 19,
+            "endColumn": 5,
+            "tooltip": "100.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 19,
+            "startColumn": 9,
+            "endLine": 19,
+            "endColumn": 11,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "0",
+            "startLine": 19,
+            "startColumn": 15,
+            "endLine": 19,
+            "endColumn": 15,
+            "ws": 1,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: division by zero",
+            "value": "0"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100.00",
+            "startLine": 22,
+            "startColumn": 7,
+            "endLine": 22,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "0.00",
+            "startLine": 23,
+            "startColumn": 9,
+            "endLine": 23,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: division by zero",
+            "value": "0"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100.00",
+            "startLine": 25,
+            "startColumn": 7,
+            "endLine": 25,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "Variable",
+            "image": "a",
+            "startLine": 27,
+            "startColumn": 1,
+            "endLine": 27,
+            "endColumn": 1,
+            "tooltip": "100.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 27,
+            "startColumn": 5,
+            "endLine": 27,
+            "endColumn": 7,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "Variable",
+            "image": "a",
+            "startLine": 29,
+            "startColumn": 1,
+            "endLine": 29,
+            "endColumn": 1,
+            "style": [
+              "Error"
+            ],
+            "tooltip": "Already defined."
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "500",
+            "startLine": 29,
+            "startColumn": 5,
+            "endLine": 29,
+            "endColumn": 7,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "500"
+          },
+          {
+            "type": "Variable",
+            "image": "b",
+            "startLine": 30,
+            "startColumn": 1,
+            "endLine": 30,
+            "endColumn": 1,
+            "tooltip": "300.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "300",
+            "startLine": 30,
+            "startColumn": 5,
+            "endLine": 30,
+            "endColumn": 7,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "300"
+          },
+          {
+            "type": "Identifier",
+            "image": "a",
+            "startLine": 31,
+            "startColumn": 12,
+            "endLine": 31,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 11,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "100.00",
+            "value": "41"
+          },
+          {
+            "type": "Identifier",
+            "image": "b",
+            "startLine": 32,
+            "startColumn": 12,
+            "endLine": 32,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 10,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "300.00",
+            "value": "300"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "300.00",
+            "startLine": 34,
+            "startColumn": 7,
+            "endLine": 34,
+            "endColumn": 12,
+            "formatting": "400.00",
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "300"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5.00",
+            "startLine": 35,
+            "startColumn": 9,
+            "endLine": 35,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "Percentage",
+            "image": "% ⥱ 15.00",
+            "startLine": 35,
+            "startColumn": 13,
+            "endLine": 35,
+            "endColumn": 21,
+            "formatting": "% ⥱ 20.00",
+            "padding": 0,
+            "ws": 0
+          },
+          {
+            "type": "Identifier",
+            "image": "c",
+            "startLine": 36,
+            "startColumn": 12,
+            "endLine": 36,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 10,
+            "style": [
+              "Identifier"
+            ],
+            "tooltip": "400.00",
+            "value": "400"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "615.00",
+            "startLine": 38,
+            "startColumn": 7,
+            "endLine": 38,
+            "endColumn": 12,
+            "formatting": "820.00",
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "615"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "5.00",
+            "startLine": 39,
+            "startColumn": 9,
+            "endLine": 39,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "30.75",
+            "startLine": 41,
+            "startColumn": 8,
+            "endLine": 41,
+            "endColumn": 12,
+            "formatting": "41.00",
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "Result"
+            ],
+            "value": "30.75"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100.00",
+            "startLine": 43,
+            "startColumn": 7,
+            "endLine": 43,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 5,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "-200.00",
+            "startLine": 44,
+            "startColumn": 6,
+            "endLine": 44,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 4,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "-200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100.00",
+            "startLine": 46,
+            "startColumn": 7,
+            "endLine": 46,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "Variable",
+            "image": "exp",
+            "startLine": 50,
+            "startColumn": 1,
+            "endLine": 50,
+            "endColumn": 3,
+            "tooltip": "300.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 50,
+            "startColumn": 7,
+            "endLine": 50,
+            "endColumn": 9,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "300"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 50,
+            "startColumn": 13,
+            "endLine": 50,
+            "endColumn": 15,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "200"
+          },
+          {
+            "type": "LParen",
+            "image": "(",
+            "startLine": 50,
+            "startColumn": 19,
+            "endLine": 50,
+            "endColumn": 19,
+            "style": [
+              "ClearMark"
+            ]
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "500",
+            "startLine": 50,
+            "startColumn": 20,
+            "endLine": 50,
+            "endColumn": 22,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "0"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "20",
+            "startLine": 50,
+            "startColumn": 26,
+            "endLine": 50,
+            "endColumn": 27,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "20"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "520",
+            "startLine": 50,
+            "startColumn": 31,
+            "endLine": 50,
+            "endColumn": 33,
+            "ws": 1,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "520"
+          },
+          {
+            "type": "RParen",
+            "image": ")",
+            "startLine": 50,
+            "startColumn": 34,
+            "endLine": 50,
+            "endColumn": 34,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: division by zero",
+            "value": "0"
+          },
+          {
+            "type": "Variable",
+            "image": "exp1",
+            "startLine": 51,
+            "startColumn": 1,
+            "endLine": 51,
+            "endColumn": 4,
+            "tooltip": "11.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "1",
+            "startLine": 51,
+            "startColumn": 8,
+            "endLine": 51,
+            "endColumn": 8,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "11"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2",
+            "startLine": 51,
+            "startColumn": 10,
+            "endLine": 51,
+            "endColumn": 10,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "10"
+          },
+          {
+            "type": "LParen",
+            "image": "(",
+            "startLine": 51,
+            "startColumn": 12,
+            "endLine": 51,
+            "endColumn": 12,
+            "style": [
+              "ClearMark"
+            ]
+          },
+          {
+            "type": "LParen",
+            "image": "(",
+            "startLine": 51,
+            "startColumn": 13,
+            "endLine": 51,
+            "endColumn": 13,
+            "style": [
+              "ClearMark"
+            ]
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "2",
+            "startLine": 51,
+            "startColumn": 14,
+            "endLine": 51,
+            "endColumn": 14,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "5"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "3",
+            "startLine": 51,
+            "startColumn": 16,
+            "endLine": 51,
+            "endColumn": 16,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "3"
+          },
+          {
+            "type": "LParen",
+            "image": "(",
+            "startLine": 51,
+            "startColumn": 19,
+            "endLine": 51,
+            "endColumn": 19,
+            "style": [
+              "ClearMark"
+            ]
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "25",
+            "startLine": 51,
+            "startColumn": 20,
+            "endLine": 51,
+            "endColumn": 21,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "0"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "25",
+            "startLine": 51,
+            "startColumn": 23,
+            "endLine": 51,
+            "endColumn": 24,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "25"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "50",
+            "startLine": 51,
+            "startColumn": 26,
+            "endLine": 51,
+            "endColumn": 27,
+            "ws": 0,
+            "style": [
+              "NegetiveLiteral"
+            ],
+            "value": "50"
+          },
+          {
+            "type": "RParen",
+            "image": ")",
+            "startLine": 51,
+            "startColumn": 28,
+            "endLine": 51,
+            "endColumn": 28,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "RangeError: division by zero",
+            "value": "0"
+          },
+          {
+            "type": "Variable",
+            "image": "exp2",
+            "startLine": 52,
+            "startColumn": 1,
+            "endLine": 52,
+            "endColumn": 4,
+            "tooltip": "40000.00"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100",
+            "startLine": 52,
+            "startColumn": 8,
+            "endLine": 52,
+            "endColumn": 10,
+            "ws": 1,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "40000"
+          },
+          {
+            "type": "LParen",
+            "image": "(",
+            "startLine": 52,
+            "startColumn": 12,
+            "endLine": 52,
+            "endColumn": 12,
+            "style": [
+              "ClearMark"
+            ]
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 52,
+            "startColumn": 13,
+            "endLine": 52,
+            "endColumn": 15,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "400"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "200",
+            "startLine": 52,
+            "startColumn": 17,
+            "endLine": 52,
+            "endColumn": 19,
+            "ws": 0,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "200"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100.00",
+            "startLine": 54,
+            "startColumn": 7,
+            "endLine": 54,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "NumberLiteral"
+            ],
+            "value": "100"
+          },
+          {
+            "type": "Identifier",
+            "image": "test",
+            "startLine": 55,
+            "startColumn": 9,
+            "endLine": 55,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 7,
+            "style": [
+              "ErrorLiteral",
+              "Error"
+            ],
+            "tooltip": "Undefined variable. Using 0.00 as value.\nRangeError: division by zero",
+            "value": "0"
+          },
+          {
+            "type": "NumberLiteral",
+            "image": "100.00",
+            "startLine": 57,
+            "startColumn": 7,
+            "endLine": 57,
+            "endColumn": 12,
+            "padding": 0,
+            "ws": 6,
+            "style": [
+              "Result"
+            ],
+            "value": "100"
+          }
+        ],
+        "variables": {
+          "test1": "0.3",
+          "test2": "7",
+          "test3": "30549363634996046820519793932136176997894027405723266638936139092812916265247204577018572351080152282568751526935904671553178534278042839697351331142009178896307244205337728522220355888195318837008165086679301794879136633899370525163649789227021200352450820912190874482021196014946372110934030798550767828365183620409339937395998276770114898681640625",
+          "test4": "0.33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333",
+          "test5": "100",
+          "a": "100",
+          "b": "300",
+          "c": "400",
+          "exp": "300",
+          "exp1": "11",
+          "exp2": "40000"
+        },
+        "lexerErrors": [],
+        "parserErrors": []
+      }
+    }
+  }
+}

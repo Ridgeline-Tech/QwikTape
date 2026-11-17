@@ -1,0 +1,77 @@
+name: Android
+
+on:
+  push:
+    branches: [main, "ao/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANDROID_USER_HOME: ${{ runner.temp }}/android-user
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install JavaScript dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Golden, unit, and web syntax checks
+        run: npm run check
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install pinned Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Android unit tests, lint, and debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+
+      - name: Verify test APK identity and contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="app/build/outputs/apk/debug/app-debug.apk"
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+
+          badging="$($tools/aapt2 dump badging "$apk")"
+          printf '%s\n' "$badging"
+          grep -Fq "package: name='construction.ridgeline.qwiktape.debug' versionCode='1' versionName='0.1.0-debug'" <<<"$badging"
+          grep -Fq "minSdkVersion:'26'" <<<"$badging"
+          grep -Fq "targetSdkVersion:'36'" <<<"$badging"
+          if grep -Fq "android.permission.INTERNET" <<<"$badging"; then
+            echo "Unexpected INTERNET permission" >&2
+            exit 1
+          fi
+
+          signer="$($tools/apksigner verify --verbose --print-certs "$apk")"
+          printf '%s\n' "$signer"
+          grep -Fq "Verifies" <<<"$signer"
+          grep -Fq "CN=Android Debug" <<<"$signer"
+
+          if unzip -l "$apk" | grep -Eiq 'sciter|\.(dll|dylib|exe)$'; then
+            echo "Unexpected Sciter or desktop binary in APK" >&2
+            exit 1
+          fi
