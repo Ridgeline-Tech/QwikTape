@@ -6,6 +6,7 @@ import {
   resultBlockAt,
 } from "../app/src/main/assets/tape-engine.js";
 import { BigNum } from "../app/src/main/assets/bignum.js";
+import { assertTapeEditInvariants } from "./tape-edit-invariants.js";
 
 function calculateTape(options) {
   const result = calculateTapeCore(options);
@@ -20,6 +21,27 @@ test("returns the pure engine contract and materializes a result block", () => {
   assert.ok(Array.isArray(result.tokens));
   assert.ok(Array.isArray(result.diagnostics));
   assert.equal(applyTapeEdits(text, result.edits), "      100.00\n+     200.00\n×       3.00\n════════════\n      900.00");
+});
+
+test("widening a stale result never joins the separator to the preceding line", () => {
+  const source = "1000000\n+     200.00\n════════════\n      300.00";
+  const inputResult = calculateTape({ text: source });
+  const afterInput = applyTapeEdits(source, inputResult.edits.filter(
+    (edit) => edit.kind === "replace-token" && edit.line !== 1,
+  ));
+  assert.equal(
+    afterInput,
+    "1000000\n+     200.00\n════════════\n      1,000,200.00",
+  );
+
+  const blurResult = calculateTape({ text: afterInput });
+  const formattingEdits = blurResult.edits.filter((edit) => edit.kind === "replace-token");
+  const separatorEdit = formattingEdits.find((edit) => edit.line === 3);
+  assert.equal(separatorEdit.start, afterInput.indexOf("═"));
+  assert.equal(
+    applyTapeEdits(afterInput, formattingEdits),
+    "1,000,000.00\n+     200.00\n══════════════════\n1,000,200.00",
+  );
 });
 
 test("locale, decimal digits, and padding are input configuration", () => {
@@ -229,6 +251,7 @@ test("seeded incomplete-input fuzz never throws and stays bounded", () => {
       "1-", "5-3\n═-u", "5-a\n═\n!",
       "3-5\n═÷5", "0-5\n═÷2", "0-t\n═÷0", "5+x\n═^0",
       "-a-5\n═×3", "0^u\n═\n\n-5", "0-a\n═\n\n-5", "5-5\n═\n=-a",
+      "1000000\n+     200.00\n════════════\n      1,000,200.00",
     ];
     while (seededInputs.length < corpusSize) {
       const fragmentCount = next() % 17;
@@ -252,6 +275,7 @@ test("seeded incomplete-input fuzz never throws and stays bounded", () => {
       false,
       JSON.stringify({ text, diagnostics: result.diagnostics }),
     );
+    assertTapeEditInvariants(text, result, "seeded incomplete-input fuzz");
   }
   const elapsed = performance.now() - started;
   assert.ok(elapsed < 5_000, `seeded fuzz took ${elapsed.toFixed(1)} ms`);

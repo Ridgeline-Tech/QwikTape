@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { applyTapeEdits, calculateTape } from "../app/src/main/assets/tape-engine.js";
+import { assertTapeEditInvariants } from "./tape-edit-invariants.js";
 
 const golden = JSON.parse(readFileSync(
   new URL("./upstream-e781115a.golden.json", import.meta.url),
@@ -80,6 +81,7 @@ function assertFixture(name, fixture) {
     assert.deepEqual(actual.variables, fixture.result.variables);
     assert.deepEqual(diagnostics(actual, "lexer"), referenceDiagnostics(fixture.result.lexerErrors));
     assert.deepEqual(diagnostics(actual, "parser"), referenceDiagnostics(fixture.result.parserErrors));
+    assertTapeEditInvariants(fixture.text, actual, name);
     assert.equal(applyTapeEdits(fixture.text, formattingEdits), fixture.result.formattedText);
     assert.equal(applyTapeEdits(fixture.text, actual.edits), fixture.result.materializedText);
   });

@@ -103,10 +103,11 @@ function formattingEdit(token) {
   const whitespace = token.ws ?? 0;
   const padding = token.padding ?? 0;
   const value = token.formatting ?? token.image;
+  const lineStart = token.startOffset - Math.max(0, (token.startColumn ?? 1) - 1);
   return {
     kind: "replace-token",
     line: token.startLine,
-    start: Math.max(0, token.startOffset - whitespace),
+    start: Math.max(lineStart, token.startOffset - whitespace),
     end: token.endOffset + 1,
     value,
     replacement: `${" ".repeat(Math.max(0, whitespace + padding))}${value}`,
