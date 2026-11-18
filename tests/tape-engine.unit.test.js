@@ -115,3 +115,85 @@ test("invalid locale falls back to default without leaking prior call state", ()
   assert.equal(insertValue("de-DE"), "2,469,134.00");
   assert.equal(insertValue("1'234'567.89"), "2'469'134.00");
 });
+
+test("incomplete trailing operators produce diagnostics without throwing", () => {
+  const result = calculateTape({ text: "1-" });
+
+  assert.deepEqual(result.tokens.map((token) => token.image), ["1", "-"]);
+  assert.equal(result.edits.some((edit) => edit.kind === "insert-result"), false);
+  assert.ok(result.diagnostics.some((diagnostic) => diagnostic.kind === "parser"));
+});
+
+test("unexpected calculation failures return a contained engine diagnostic", () => {
+  const result = calculateTape({
+    text: { toString() { throw new Error("injected failure"); } },
+  });
+
+  assert.deepEqual(result.edits, []);
+  assert.deepEqual(result.tokens, []);
+  assert.deepEqual(result.variables, {});
+  assert.equal(result.diagnostics.length, 1);
+  assert.equal(result.diagnostics[0].kind, "engine");
+  assert.equal(result.diagnostics[0].message, "The tape could not be recalculated. Your text was preserved.");
+  assert.doesNotMatch(result.diagnostics[0].message, /injected failure/);
+  assert.deepEqual(calculateTape(), {
+    edits: [],
+    tokens: [],
+    diagnostics: [],
+    variables: {},
+  });
+});
+
+for (const incomplete of ["b=÷0", "x=×x", "b = ÷ 2"]) {
+  test(`incomplete assignment keeps unrelated tape results: ${incomplete}`, () => {
+    const text = `a = 5\n100\n+ 200\n${incomplete}\n250\n+ 0\n`;
+    const result = calculateTape({ text });
+
+    assert.deepEqual(
+      result.edits.filter((edit) => edit.kind === "insert-result").map((edit) => edit.value),
+      ["300.00", "250.00"],
+    );
+    assert.deepEqual(result.variables, { a: "5" });
+    assert.equal(result.diagnostics.some((diagnostic) => diagnostic.kind === "engine"), false);
+    assert.ok(result.diagnostics.some((diagnostic) => diagnostic.kind === "parser"));
+  });
+}
+
+test("seeded incomplete-input fuzz never throws and stays bounded", () => {
+  const corpusSize = 4_039;
+  const alphabet = "0123456789+-*/×÷^%()= abcdef\n.,";
+  const inputs = [];
+
+  for (const seed of [0x51a7c0de, 0x73d0cafe]) {
+    let state = seed;
+    const next = () => {
+      state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+      return state;
+    };
+    const seededInputs = ["1-"];
+    while (seededInputs.length < corpusSize) {
+      const length = next() % 33;
+      let text = "";
+      for (let index = 0; index < length; index += 1) {
+        text += alphabet[next() % alphabet.length];
+      }
+      seededInputs.push(text);
+    }
+    inputs.push(...seededInputs);
+  }
+
+  const started = performance.now();
+  for (const text of inputs) {
+    const result = calculateTape({ text });
+    assert.ok(Array.isArray(result.tokens), JSON.stringify({ text }));
+    assert.ok(Array.isArray(result.edits), JSON.stringify({ text }));
+    assert.ok(Array.isArray(result.diagnostics), JSON.stringify({ text }));
+    assert.equal(
+      result.diagnostics.some((diagnostic) => diagnostic.kind === "engine"),
+      false,
+      JSON.stringify({ text, diagnostics: result.diagnostics }),
+    );
+  }
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed < 5_000, `seeded fuzz took ${elapsed.toFixed(1)} ms`);
+});

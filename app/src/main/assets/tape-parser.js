@@ -314,14 +314,22 @@ class TapeParser extends BaseParser {
     }
 
     const evaluationError = (token, error)=>{
+      if(!token) return
+      const message = String(error)
       Object.assign(token, {
         style: ['ErrorLiteral', 'Error'],
-        tooltip: token.tooltip ? token.tooltip + "\n" + error : error,
+        tooltip: token.tooltip ? token.tooltip + "\n" + message : message,
       })
     }
 
+    const hasValue = (token)=> token?.value !== undefined
+
     const evaluate = (x, operator, y)=>{
       return $.ACTION(()=>{
+        if(!hasValue(x) || !hasValue(y)){
+          evaluationError(y ?? operator ?? x, 'Incomplete expression.')
+          return x
+        }
         try {
           if (tokenMatcher(operator, Plus)) {
             return x.value = BigNum.add(x.value, y.value)
@@ -356,7 +364,7 @@ class TapeParser extends BaseParser {
           throw "Error: This operator is not yet supported"
         }
         catch(e){
-          evaluationError(y, e)
+          evaluationError(y ?? operator ?? x, e)
           return x
         }
         
@@ -366,6 +374,11 @@ class TapeParser extends BaseParser {
     const evaluatePostfix = (x, operator, y, postfix)=>{
       let result
       let _y
+
+      if(!hasValue(x) || !hasValue(y)){
+        evaluationError(y ?? operator ?? x, 'Incomplete expression.')
+        return x
+      }
 
       result = $.ACTION(()=>{
         try {
@@ -538,6 +551,10 @@ class TapeParser extends BaseParser {
       value = $.SUBRULE($.inlineExpression)
       result = $.ACTION(()=>{
         const key = variable.image
+        if(value === undefined){
+          evaluationError(variable, 'Incomplete assignment.')
+          return
+        }
         if(key in this._vars){
           Object.assign(variable, {style: ['Error'], tooltip: 'Already defined.'})
         }
@@ -555,7 +572,7 @@ class TapeParser extends BaseParser {
       let exp
       exp =  $.SUBRULE($.sumExpression)
       $.OPTION(()=>$.CONSUME(Annotation))
-      return exp.value
+      return exp?.value
     })
 
     this.RULE("sumExpression", ()=>{
@@ -721,6 +738,10 @@ class TapeParser extends BaseParser {
         { ALT: ()=>$.CONSUME2(DefinedIdentifier) }
       ])
       return $.ACTION(()=>{
+        if(!identifier){
+          evaluationError(negetive ?? lastToken, 'Incomplete variable.')
+          return identifier
+        }
         const key = identifier.image
         let ws = identifier.startColumn
 
@@ -733,7 +754,7 @@ class TapeParser extends BaseParser {
           ws: ws-1,
         })
 
-        if(key in this._vars){
+        if(key in this._vars && this._vars[key] !== undefined){
           const value = negetive ? this._vars[key].negated() : this._vars[key]
           Object.assign(identifier, {
             value: value,
@@ -769,6 +790,10 @@ class TapeParser extends BaseParser {
       ])*/
 
       return $.ACTION(()=>{
+        if(!number?.payload?.parse){
+          evaluationError(number ?? negetive ?? lastToken, 'Incomplete number.')
+          return number
+        }
         let ws = number.startColumn
         if(!tokenMatcher(lastToken, EOF)) {
           let lines = number.startLine - lastToken.endLine

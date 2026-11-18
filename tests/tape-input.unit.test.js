@@ -5,6 +5,7 @@ import {
   applyBeforeInput,
   bindHistoryControl,
   removeResultBlockAt,
+  runInputRecalculation,
 } from "../app/src/main/assets/tape-input.js";
 
 const golden = JSON.parse(readFileSync(
@@ -47,6 +48,21 @@ test("history controls retain editor focus before restoring history", () => {
   }
   listeners.click();
   assert.deepEqual(restored, ["redo"]);
+});
+
+test("input recalculation failures preserve the editor and log one diagnostic", () => {
+  const failure = new Error("unexpected engine failure");
+  const diagnostics = [];
+  const outcome = runInputRecalculation(
+    () => { throw failure; },
+    (...message) => diagnostics.push(message),
+  );
+
+  assert.equal(outcome, null);
+  assert.deepEqual(diagnostics, [[
+    "QwikTape input recalculation failed; editor text was preserved.",
+    failure,
+  ]]);
 });
 
 for (const [name, fixture] of Object.entries(golden.deletionCases)) {
