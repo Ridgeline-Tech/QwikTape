@@ -99,15 +99,22 @@ function resultInsert(edit) {
   };
 }
 
-function formattingEdit(token) {
+function formattingEdit(token, source) {
   const whitespace = token.ws ?? 0;
   const padding = token.padding ?? 0;
   const value = token.formatting ?? token.image;
   const lineStart = token.startOffset - Math.max(0, (token.startColumn ?? 1) - 1);
+  let start = Math.max(lineStart, token.startOffset - whitespace);
+  for (let offset = token.startOffset - 1; offset >= start; offset -= 1) {
+    if (source[offset] !== " " && source[offset] !== "\t") {
+      start = offset + 1;
+      break;
+    }
+  }
   return {
     kind: "replace-token",
     line: token.startLine,
-    start: Math.max(lineStart, token.startOffset - whitespace),
+    start,
     end: token.endOffset + 1,
     value,
     replacement: `${" ".repeat(Math.max(0, whitespace + padding))}${value}`,
@@ -172,7 +179,7 @@ export function calculateTape({
     const edits = [
       ...lex.tokens
         .filter((token) => token.formatting !== undefined || token.padding !== undefined)
-        .map(formattingEdit),
+        .map((token) => formattingEdit(token, source)),
       ...ast
         .filter((edit) => edit?.type === QwikTape.tokenType.Insert)
         .map(resultInsert),
