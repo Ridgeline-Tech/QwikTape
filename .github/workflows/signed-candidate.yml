@@ -143,7 +143,7 @@ jobs:
             echo '::error::Invalid expected certificate SHA-256 secret.'
             exit 1
           fi
-          expected_cert_sha256=0000000000000000000000000000000000000000000000000000000000000000
+          expected_cert_sha256=7669df44cfcd08f4e160e67e8273f3f6a5aaf7193ecbc99725027e7f451c697f
           if [[ ! "$expected_cert_sha256" =~ ^[0-9a-f]{64}$ ]] || \
              [[ "$expected_cert_sha256" == 0000000000000000000000000000000000000000000000000000000000000000 ]]; then
             echo '::error::Reviewed QwikTape release certificate pin is not configured.'
