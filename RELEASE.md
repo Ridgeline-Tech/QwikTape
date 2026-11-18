@@ -79,7 +79,8 @@ No workflow in this gate creates a tag, GitHub Release, catalog row, deployment
 or device installation. Publishing an authorized signed release occurs
 only after the identity, repository controls, wrapper, certificate pin, secret
 inventory and one approved signed-candidate run have passed their separate
-gates.
+gates. That approval is not standing authority: each release requires its own
+approved `qwiktape-release` Environment deployment.
 
 ## Pocket Builder engine impact
 
