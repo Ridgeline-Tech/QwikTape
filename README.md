@@ -18,7 +18,7 @@ origin. No Sciter component is included in the APK.
 The Android tape engine is a pure JavaScript module:
 
 ```text
-{ text, locale, decimalDigits, padding } -> { edits, tokens, diagnostics, variables }
+{ text, locale, decimalDigits, padding, extension? } -> { edits, tokens, diagnostics, variables }
 ```
 
 It reuses the upstream Chevrotain grammar and replaces QuickJS operator-
@@ -27,6 +27,45 @@ addition and multiplication remain exact within the configured 1,000-digit
 working precision. Non-terminating division is rounded half-even to the
 upstream maximum of 113 fractional digits. Display precision remains
 configurable from 0 to 50 digits.
+
+### Optional engine extension
+
+`extension` is an off-by-default engine hook. Omitted and `null` extensions
+take the native path and are deep-output-equivalent in the complete golden and
+unit suite. The QwikTape app passes no extension, and this repository ships no
+construction-specific matcher, value, UI, or behavior.
+
+An extension supplies `matchLiteral(text, offset)` and may supply
+`matchPrefix(text, offset)` and `matchPostfix(text, offset)`. A match returns
+`null` or `{ length, value, formatting? }`; `length` is the exact positive
+source span, `value` is extension-owned, and optional `formatting` replaces
+that matched token without changing its source offsets.
+
+Extension values are handled only by `extension.valueAdapter`:
+
+```text
+fromDecimal(decimal, context)
+formatLiteral(value, context)
+formatValue(value, context)
+fixedValue(value, context)
+formatPercentageValue(value, context)
+negate(value, context)
+isNegative(value, context)
+evaluate(left, operator, right, context)
+percentageOfOne(value, context)
+evaluatePercentage(left, operator, percentage, context)
+applyPrefix(prefix, value, context)
+applyPostfix(value, postfix, context)
+```
+
+`context` contains `{ decimalDigits, padding }`. Native-native operations stay
+on the BigNum path. If either operand is extension-valued, native operands are
+converted with `fromDecimal` and the adapter owns the result. Adapter and
+matcher failures become ordinary diagnostics while the prior accumulator value
+is retained. A failed matcher consumes no source text and reports once per
+calculation. The adapter owns validation and magnitude bounds for its custom
+values, including rejection or handling of non-finite states such as NaN and
+Infinity; QwikTape's native BigNum bounds do not apply to extension values.
 
 The Android UI includes editable free-text tapes, result blocks, annotations,
 named values, local persistence, open/close/cycle tabs, browse/rename/delete,

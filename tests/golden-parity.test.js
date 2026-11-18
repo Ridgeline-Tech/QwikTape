@@ -67,6 +67,12 @@ function referenceDiagnostics(errors) {
 function assertFixture(name, fixture) {
   test(`matches upstream full output: ${name}`, () => {
     const actual = calculateTape({ text: fixture.text, ...fixture.settings });
+    const withNullExtension = calculateTape({
+      text: fixture.text,
+      ...fixture.settings,
+      extension: null,
+    });
+    assert.deepEqual(withNullExtension, actual);
     const formattingEdits = actual.edits.filter((edit) => edit.kind === "replace-token");
 
     assert.deepEqual(interestingTokens(actual), fixture.result.tokens);
