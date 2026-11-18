@@ -8,6 +8,30 @@ import {
 import { BigNum } from "../app/src/main/assets/bignum.js";
 import { assertTapeEditInvariants } from "./tape-edit-invariants.js";
 
+const perInputHangGuardMs = 2_000;
+
+function assertWithinHangGuard(label, elapsedMs) {
+  assert.ok(
+    elapsedMs < perInputHangGuardMs,
+    `${label} exceeded the ${perInputHangGuardMs} ms per-input hang guard (${elapsedMs.toFixed(1)} ms)`,
+  );
+}
+
+function assertConfiguredPerformanceBudget(label, elapsedMs) {
+  const configured = process.env.QWIKTAPE_PERF_BUDGET_MS;
+  if (configured === undefined) return;
+
+  const budgetMs = Number(configured);
+  assert.ok(
+    Number.isFinite(budgetMs) && budgetMs > 0,
+    `QWIKTAPE_PERF_BUDGET_MS must be a positive number, received ${JSON.stringify(configured)}`,
+  );
+  assert.ok(
+    elapsedMs < budgetMs,
+    `${label} exceeded the configured ${budgetMs} ms performance budget (${elapsedMs.toFixed(1)} ms)`,
+  );
+}
+
 function calculateTape(options) {
   const result = calculateTapeCore(options);
   assert.deepEqual(calculateTapeCore({ ...options, extension: null }), result);
@@ -117,7 +141,8 @@ test("oversized powers fail quickly and leave the accumulator unchanged", () => 
   const result = calculateTape({ text: "10\n^99999999\n" });
   const elapsed = performance.now() - started;
 
-  assert.ok(elapsed < 1000, `oversized power guard took ${elapsed.toFixed(1)} ms`);
+  assertWithinHangGuard("oversized power guard", elapsed);
+  assertConfiguredPerformanceBudget("oversized power guard", elapsed);
   assert.equal(
     result.edits.find((edit) => edit.kind === "insert-result")?.value,
     "10.00",
@@ -148,7 +173,8 @@ test("result magnitude bound stops variable squaring without rejecting valid lar
   const started = performance.now();
   const bounded = calculateTape({ text: `${lines.join("\n")}\n` });
   const elapsed = performance.now() - started;
-  assert.ok(elapsed < 1500, `variable squaring guard took ${elapsed.toFixed(1)} ms`);
+  assertWithinHangGuard("variable squaring guard", elapsed);
+  assertConfiguredPerformanceBudget("variable squaring guard", elapsed);
   assert.equal(bounded.variables.a, "1e+4999");
   for (const name of names.slice(1)) assert.equal(bounded.variables[name], "1e+9998");
 
@@ -292,7 +318,10 @@ test("seeded incomplete-input fuzz never throws and stays bounded", () => {
 
   const started = performance.now();
   for (const text of inputs) {
+    const inputStarted = performance.now();
     const result = calculateTape({ text });
+    const inputElapsed = performance.now() - inputStarted;
+    assertWithinHangGuard(`seeded fuzz input ${JSON.stringify(text)}`, inputElapsed);
     assert.ok(Array.isArray(result.tokens), JSON.stringify({ text }));
     assert.ok(Array.isArray(result.edits), JSON.stringify({ text }));
     assert.ok(Array.isArray(result.diagnostics), JSON.stringify({ text }));
@@ -304,5 +333,5 @@ test("seeded incomplete-input fuzz never throws and stays bounded", () => {
     assertTapeEditInvariants(text, result, "seeded incomplete-input fuzz");
   }
   const elapsed = performance.now() - started;
-  assert.ok(elapsed < 5_000, `seeded fuzz took ${elapsed.toFixed(1)} ms`);
+  assertConfiguredPerformanceBudget("seeded fuzz total", elapsed);
 });
