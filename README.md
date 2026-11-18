@@ -121,6 +121,8 @@ See `NOTICE` for third-party attribution and the dated port change notice.
 ```
 * Expressions use operator precedence. `myvar = 100 + 200 × 3` myvar is `700`.
 * Decimal arithmetic preserves results such as [`0.1 + 0.2 = 0.3`](https://0.30000000000000004.com/); non-terminating division follows the documented finite, half-even precision fallback.
+* Arithmetic results are limited to 10,000 integer digits, and power operations additionally require a nonnegative integer exponent no greater than 10,000. Oversized steps become normal skipped errors instead of blocking the editor.
+* Invalid locale patterns fall back to the default `1,234,567.89` format. This deliberately differs from upstream QwikTape, which retains the previous locale after an invalid pattern.
 * Export your tape as PDF <img src="src/assets/pdf.svg" width="24">.
 
 <br></br>

@@ -29,3 +29,6 @@ Ridgeline Technology adapted QwikTape for Android as a local-only WebView app.
 The port replaces Sciter, QuickJS BigDecimal, Sciter storage, and Sciter DOM
 APIs with browser DOM/localStorage and decimal.js. It adds a pure JavaScript
 tape engine, Android packaging, tests, and CI. No Sciter component is bundled.
+The port bounds arithmetic results at 10,000 integer digits to prevent browser
+formatting stalls, and invalid locale patterns reset to the default format
+instead of retaining the previous locale as upstream does.

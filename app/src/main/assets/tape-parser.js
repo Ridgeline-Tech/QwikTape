@@ -313,27 +313,34 @@ class TapeParser extends BaseParser {
       })
     }
 
+    const evaluationError = (token, error)=>{
+      Object.assign(token, {
+        style: ['ErrorLiteral', 'Error'],
+        tooltip: token.tooltip ? token.tooltip + "\n" + error : error,
+      })
+    }
+
     const evaluate = (x, operator, y)=>{
       return $.ACTION(()=>{
-        if (tokenMatcher(operator, Plus)) {
-          return x.value = x.value.plus(y.value)
-        }  
+        try {
+          if (tokenMatcher(operator, Plus)) {
+            return x.value = BigNum.add(x.value, y.value)
+          }  
 
-        if (tokenMatcher(operator, Minus)) {
-          if(!y.style?.includes("Error")){
-            if (tokenMatcher(y, NumberLiteral)) {
-              Object.assign(y, {style: ['NegetiveLiteral']})
+          if (tokenMatcher(operator, Minus)) {
+            if(!y.style?.includes("Error")){
+              if (tokenMatcher(y, NumberLiteral)) {
+                Object.assign(y, {style: ['NegetiveLiteral']})
+              }
             }
-          }
-          return x.value = x.value.minus(y.value)
-        }      
+            return x.value = BigNum.subtract(x.value, y.value)
+          }      
 
-        if (tokenMatcher(operator, Mult)) {
-          return x.value = x.value.times(y.value)
-        }  
-        
-        if (tokenMatcher(operator, Div)) {
-          try {
+          if (tokenMatcher(operator, Mult)) {
+            return x.value = BigNum.multiply(x.value, y.value)
+          }  
+          
+          if (tokenMatcher(operator, Div)) {
             try {
               return x.value = BigNum.divideExact(x.value, y.value)
             }
@@ -341,62 +348,44 @@ class TapeParser extends BaseParser {
               return x.value = BigNum.divide(x.value, y.value)
             }
           }
-          catch(e){
-            Object.assign(y, {
-              style: ['ErrorLiteral', 'Error'],
-              tooltip: y.tooltip ? y.tooltip + "\n" + e : e,
-            })
-            return x
-          }
-          /*if(_y == BigNum(0.00)){
-            Object.assign(y, {
-              style: ['ErrorLiteral', 'Error'],
-              tooltip: 'Divide by Zero.',
-            })
-            return x
-          }*/
-        }
 
-        if (tokenMatcher(operator, Pow)) {
-          try {
+          if (tokenMatcher(operator, Pow)) {
             return x.value = BigNum.power(x.value, y.value)
-          }
-          catch(e){
-            Object.assign(y, {
-              style: ['ErrorLiteral', 'Error'],
-              tooltip: e,
-            })            
-            return x
-          }
-        }  
-        
-        throw "Error: This operator is not yet supported"
+          }  
+          
+          throw "Error: This operator is not yet supported"
+        }
+        catch(e){
+          evaluationError(y, e)
+          return x
+        }
         
       })
     }
     
     const evaluatePostfix = (x, operator, y, postfix)=>{
       let result
-      let _y = BigNum.divideExact(y.value, BigNum(100.00))
+      let _y
 
       result = $.ACTION(()=>{
-        if (tokenMatcher(operator, Plus)) {
-          _y = _y.times(x.value)
-          return x.value = x.value.plus(_y)
-        }  
- 
-        if (tokenMatcher(operator, Minus)) {
-          Object.assign(y, {style: ['NegetiveLiteral']})
-          _y = _y.times(x.value)
-          return x.value = x.value.minus(_y)
-        }
-        
-        if (tokenMatcher(operator, Mult)) {
-          return x.value = x.value.times(_y)
-        }
-        
-        if (tokenMatcher(operator, Div)) {
-          try {
+        try {
+          _y = BigNum.divideExact(y.value, BigNum(100.00))
+          if (tokenMatcher(operator, Plus)) {
+            _y = BigNum.multiply(_y, x.value)
+            return x.value = BigNum.add(x.value, _y)
+          }  
+  
+          if (tokenMatcher(operator, Minus)) {
+            Object.assign(y, {style: ['NegetiveLiteral']})
+            _y = BigNum.multiply(_y, x.value)
+            return x.value = BigNum.subtract(x.value, _y)
+          }
+          
+          if (tokenMatcher(operator, Mult)) {
+            return x.value = BigNum.multiply(x.value, _y)
+          }
+          
+          if (tokenMatcher(operator, Div)) {
             try {
               return x.value = BigNum.divideExact(x.value, _y)
             }
@@ -407,29 +396,17 @@ class TapeParser extends BaseParser {
               return x.value = BigNum.divide(x.value, y.value)
             }
           }
-          catch(e){
-            Object.assign(y, {
-              style: ['ErrorLiteral', 'Error'],
-              tooltip: y.tooltip ? y.tooltip + "\n" + e : e,
-            })            
-            return x
-          }            
-        }
 
-        if (tokenMatcher(operator, Pow)) {
-          try {
+          if (tokenMatcher(operator, Pow)) {
             return x.value = BigNum.power(x.value, _y)
           }
-          catch(e){
-            Object.assign(y, {
-              style: ['ErrorLiteral', 'Error'],
-              tooltip: e,
-            })            
-            return x
-          }
-        }
 
-        throw "Error: This operator is not yet supported"
+          throw "Error: This operator is not yet supported"
+        }
+        catch(e){
+          evaluationError(y, e)
+          return x
+        }
         
       })
       

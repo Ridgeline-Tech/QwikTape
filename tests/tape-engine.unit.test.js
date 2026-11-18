@@ -58,3 +58,60 @@ test("division fallback rounds an exact tie half-even at 113 fractional digits",
   const divisor = BigNum(`2${"0".repeat(113)}`);
   assert.equal(BigNum.divide(BigNum(1), divisor).toFixed(113), `0.${"0".repeat(113)}`);
 });
+
+test("oversized powers fail quickly and leave the accumulator unchanged", () => {
+  const started = performance.now();
+  const result = calculateTape({ text: "10\n^99999999\n" });
+  const elapsed = performance.now() - started;
+
+  assert.ok(elapsed < 1000, `oversized power guard took ${elapsed.toFixed(1)} ms`);
+  assert.equal(
+    result.edits.find((edit) => edit.kind === "insert-result")?.value,
+    "10.00",
+  );
+  const powerError = result.tokens.find((token) => token.image === "99999999");
+  assert.ok(powerError?.styles.includes("Error"));
+  assert.match(powerError?.tooltip ?? "", /power is too large/);
+
+  const normal = calculateTape({ text: "2\n^ 10\n" });
+  assert.equal(
+    normal.edits.find((edit) => edit.kind === "insert-result")?.value,
+    "1,024.00",
+  );
+});
+
+test("result magnitude bound stops variable squaring without rejecting valid large values", () => {
+  const valid = calculateTape({ text: "a = 10 ^ 4999\nb = a × a\n" });
+  assert.deepEqual(valid.diagnostics, []);
+  assert.equal(valid.variables.a, "1e+4999");
+  assert.equal(valid.variables.b, "1e+9998");
+
+  const names = "abcdefghijklm";
+  const lines = ["a = 10 ^ 4999"];
+  for (let index = 1; index < names.length; index += 1) {
+    lines.push(`${names[index]} = ${names[index - 1]} × ${names[index - 1]}`);
+  }
+
+  const started = performance.now();
+  const bounded = calculateTape({ text: `${lines.join("\n")}\n` });
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed < 1500, `variable squaring guard took ${elapsed.toFixed(1)} ms`);
+  assert.equal(bounded.variables.a, "1e+4999");
+  for (const name of names.slice(1)) assert.equal(bounded.variables[name], "1e+9998");
+
+  const errors = bounded.diagnostics.filter((item) => item.kind === "evaluation");
+  assert.equal(errors.length, names.length - 2);
+  assert.ok(errors.every((item) => /result is too large/.test(item.message)));
+  assert.ok(errors.every((item) => item.token.styles.includes("Error")));
+});
+
+test("invalid locale falls back to default without leaking prior call state", () => {
+  const insertValue = (locale) => calculateTape({
+    text: "1234567\n+ 1234567\n",
+    locale,
+  }).edits.find((edit) => edit.kind === "insert-result")?.value;
+
+  assert.equal(insertValue("1.234.567,89"), "2.469.134,00");
+  assert.equal(insertValue("de-DE"), "2,469,134.00");
+  assert.equal(insertValue("1'234'567.89"), "2'469'134.00");
+});
