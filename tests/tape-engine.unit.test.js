@@ -44,6 +44,31 @@ test("widening a stale result never joins the separator to the preceding line", 
   );
 });
 
+test("formatting a recovered token never deletes skipped user text", () => {
+  const text = "0-5\n═\n)3";
+  const result = calculateTape({ text });
+  const recoveredEdit = result.edits.find((edit) => edit.line === 3);
+
+  assert.equal(recoveredEdit.start, text.lastIndexOf("3"));
+  assert.equal(
+    applyTapeEdits(text, result.edits),
+    "        0.00-5\n═\n)        3.00",
+  );
+  assert.ok(result.diagnostics.some((diagnostic) => diagnostic.kind === "parser"));
+});
+
+test("a bare carriage return is preserved as unsupported literal input", () => {
+  const text = "0-5\n═\n\r3";
+  const result = calculateTape({ text });
+
+  assert.equal(
+    applyTapeEdits(text, result.edits),
+    "        0.00-5\n═\n\r        3.00",
+  );
+  assert.ok(result.diagnostics.some((diagnostic) =>
+    diagnostic.kind === "lexer" && diagnostic.offset === text.indexOf("\r")));
+});
+
 test("locale, decimal digits, and padding are input configuration", () => {
   const text = "1000\n+ 0,5\n";
   const result = calculateTape({
@@ -252,6 +277,7 @@ test("seeded incomplete-input fuzz never throws and stays bounded", () => {
       "3-5\n═÷5", "0-5\n═÷2", "0-t\n═÷0", "5+x\n═^0",
       "-a-5\n═×3", "0^u\n═\n\n-5", "0-a\n═\n\n-5", "5-5\n═\n=-a",
       "1000000\n+     200.00\n════════════\n      1,000,200.00",
+      "0-5\n═\n)3",
     ];
     while (seededInputs.length < corpusSize) {
       const fragmentCount = next() % 17;

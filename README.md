@@ -21,6 +21,12 @@ The Android tape engine is a pure JavaScript module:
 { text, locale, decimalDigits, padding, extension? } -> { edits, tokens, diagnostics, variables }
 ```
 
+Edit offsets always refer to the exact input string. LF and CRLF are supported
+line endings. A bare carriage return is not a line break and is preserved with
+a lexer diagnostic; callers outside the browser editor must normalize bare CR
+before calculation and apply returned edits to that same normalized string.
+The Android textarea already supplies LF-normalized text.
+
 It reuses the upstream Chevrotain grammar and replaces QuickJS operator-
 overloaded `BigDecimal` values with explicit decimal.js operations. Decimal
 addition and multiplication remain exact within the configured 1,000-digit
