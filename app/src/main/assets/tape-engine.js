@@ -73,15 +73,7 @@ function formattingEdit(token) {
   };
 }
 
-function engineFailure(error, lex) {
-  let message = "Unexpected tape calculation failure";
-  try {
-    if (error instanceof Error && error.message) message = error.message;
-    else if (error !== undefined) message = String(error);
-  } catch (_messageError) {
-    // Keep the no-throw boundary even when an unusual thrown value cannot be stringified.
-  }
-
+function engineFailure(_error, lex) {
   let tokens = [];
   try { tokens = (lex?.tokens ?? []).map(publicToken); } catch (_tokenError) { /* no-op */ }
 
@@ -90,8 +82,8 @@ function engineFailure(error, lex) {
     tokens,
     diagnostics: [{
       kind: "engine",
-      name: error instanceof Error ? error.name : "Error",
-      message: `Tape calculation failed: ${message}`,
+      name: "EngineError",
+      message: "The tape could not be recalculated. Your text was preserved.",
     }],
     variables: {},
   };
