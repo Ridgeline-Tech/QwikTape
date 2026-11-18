@@ -32,3 +32,6 @@ tape engine, Android packaging, tests, and CI. No Sciter component is bundled.
 The port bounds arithmetic results at 10,000 integer digits to prevent browser
 formatting stalls, and invalid locale patterns reset to the default format
 instead of retaining the previous locale as upstream does.
+
+Change notice — 2026-11-17
+0.1.1: fix line-join text corruption when totals widen

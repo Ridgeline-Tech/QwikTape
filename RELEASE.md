@@ -1,8 +1,8 @@
 # QwikTape signing and signed-candidate CI
 
-The Android package is `construction.ridgeline.qwiktape`. Its first signed
-release uses versionName `0.1.0` and versionCode `1`; debug builds retain the
-`.debug` application ID and `-debug` version suffix. Release builds have no
+The Android package is `construction.ridgeline.qwiktape`. Its next signed
+release target uses versionName `0.1.1` and versionCode `2`; debug builds retain
+the `.debug` application ID and `-debug` version suffix. Release builds have no
 debug-signing or unsigned fallback.
 
 ## Dedicated identity custody
@@ -76,7 +76,7 @@ The workflow validates both the Environment secret and checked-in pin, compares
 them, and passes the checked-in pin—not the secret—to the APK verifier.
 
 No workflow in this gate creates a tag, GitHub Release, catalog row, deployment
-or device installation. Publishing the single authorized signed release occurs
+or device installation. Publishing an authorized signed release occurs
 only after the identity, repository controls, wrapper, certificate pin, secret
 inventory and one approved signed-candidate run have passed their separate
 gates.
