@@ -467,13 +467,13 @@ class TapeParser extends BaseParser {
               }
             }  
             $.ACTION(()=>{
-              if(!rhs) return
               if(postfix){
                 evaluatePostfix(lhs, op, rhs, postfix)
               }
               else {
                 evaluate(lhs, op, rhs)
               }
+              if(!hasValue(lhs) || !hasValue(rhs)) return
               depth++
             })
             } 
@@ -667,6 +667,7 @@ class TapeParser extends BaseParser {
             $.CONSUME(ResultEqual)
             identifier = $.CONSUME(SuffixIdentifier)
             $.ACTION(()=>{
+              if(!hasValue(number)) return
               const key = identifier.image
               if(key in this._vars){
                 Object.assign(identifier, {style: ['Error'], tooltip: 'Already defined.'})
@@ -688,6 +689,7 @@ class TapeParser extends BaseParser {
       $.OPTION2(()=>$.CONSUME(Annotation))
 
       return $.ACTION(()=>{
+        if(!hasValue(number)) return
         const node = {
           startLine: nl.startLine,     startColumn: nl.startColumn, 
           endLine:   number.endLine,   endColumn:number.endColumn,
@@ -792,7 +794,7 @@ class TapeParser extends BaseParser {
       return $.ACTION(()=>{
         if(!number?.payload?.parse){
           evaluationError(number ?? negetive ?? lastToken, 'Incomplete number.')
-          return number
+          return
         }
         let ws = number.startColumn
         if(!tokenMatcher(lastToken, EOF)) {
