@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   applyBeforeInput,
+  bindHistoryControl,
   removeResultBlockAt,
 } from "../app/src/main/assets/tape-input.js";
 
@@ -29,6 +30,23 @@ for (const [name, fixture] of Object.entries(golden.enterCases)) {
 
 test("beforeinput ignores ordinary inserted text", () => {
   assert.equal(applyBeforeInput({ inputType: "insertText", text: "1", selectionStart: 1 }), null);
+});
+
+test("history controls retain editor focus before restoring history", () => {
+  const listeners = {};
+  const button = {
+    addEventListener(type, listener) { listeners[type] = listener; },
+  };
+  const restored = [];
+  bindHistoryControl(button, "redo", (direction) => restored.push(direction));
+
+  for (const type of ["pointerdown", "mousedown"]) {
+    let prevented = false;
+    listeners[type]({ preventDefault() { prevented = true; } });
+    assert.equal(prevented, true, `${type} must prevent focus-changing default behavior`);
+  }
+  listeners.click();
+  assert.deepEqual(restored, ["redo"]);
 });
 
 for (const [name, fixture] of Object.entries(golden.deletionCases)) {
