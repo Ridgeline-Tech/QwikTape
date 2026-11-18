@@ -5,6 +5,7 @@ import {
   calculateTape,
   resultBlockAt,
 } from "../app/src/main/assets/tape-engine.js";
+import { BigNum } from "../app/src/main/assets/bignum.js";
 
 test("returns the pure engine contract and materializes a result block", () => {
   const text = "100\n+ 200\n× 3\n";
@@ -53,7 +54,7 @@ test("result blocks are located atomically for delete/backspace behavior", () =>
   });
 });
 
-test("division is half-even at the upstream maximum fractional precision", () => {
-  const result = calculateTape({ text: "third = 100 ÷ 300\n" });
-  assert.equal(result.variables.third, `0.${"3".repeat(113)}`);
+test("division fallback rounds an exact tie half-even at 113 fractional digits", () => {
+  const divisor = BigNum(`2${"0".repeat(113)}`);
+  assert.equal(BigNum.divide(BigNum(1), divisor).toFixed(113), `0.${"0".repeat(113)}`);
 });

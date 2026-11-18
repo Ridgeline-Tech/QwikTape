@@ -334,7 +334,12 @@ class TapeParser extends BaseParser {
         
         if (tokenMatcher(operator, Div)) {
           try {
-            return x.value = BigNum.divide(x.value, y.value)
+            try {
+              return x.value = BigNum.divideExact(x.value, y.value)
+            }
+            catch(e){
+              return x.value = BigNum.divide(x.value, y.value)
+            }
           }
           catch(e){
             Object.assign(y, {
@@ -372,7 +377,7 @@ class TapeParser extends BaseParser {
     
     const evaluatePostfix = (x, operator, y, postfix)=>{
       let result
-      let _y = BigNum.divide(y.value, BigNum(100.00))
+      let _y = BigNum.divideExact(y.value, BigNum(100.00))
 
       result = $.ACTION(()=>{
         if (tokenMatcher(operator, Plus)) {
@@ -392,7 +397,15 @@ class TapeParser extends BaseParser {
         
         if (tokenMatcher(operator, Div)) {
           try {
-            return x.value = BigNum.divide(x.value, _y)
+            try {
+              return x.value = BigNum.divideExact(x.value, _y)
+            }
+            catch(e){
+              // Preserve QwikTape's QuickJS fallback behavior: when the
+              // percentage division is non-terminating, it divides by the
+              // original percentage operand rather than its y/100 value.
+              return x.value = BigNum.divide(x.value, y.value)
+            }
           }
           catch(e){
             Object.assign(y, {

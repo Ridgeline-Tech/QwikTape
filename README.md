@@ -31,8 +31,14 @@ configurable from 0 to 50 digits.
 The Android UI includes editable free-text tapes, result blocks, annotations,
 named values, local persistence, open/close/cycle tabs, browse/rename/delete,
 locale and padding settings, optional `×`/`÷` entry, optional Escape-to-clear,
-and keyboard undo/redo that reparses downstream totals. It intentionally adds
-no Pocket Builder construction features.
+and keyboard plus touch-accessible undo/redo that reparses downstream totals.
+Android soft-keyboard Enter is handled through `beforeinput` as well as
+hardware key events. It intentionally adds no Pocket Builder construction
+features.
+
+Tape data stays in the app's local WebView storage. Android backup and device
+transfer are disabled (`allowBackup=false`), with explicit cloud, transfer,
+and legacy full-backup exclusions for every app data domain.
 
 PDF export is deferred. Production signing, release publication, Zac's Apps
 catalog registration, and device installation are separate decisions and are
@@ -51,9 +57,19 @@ BigDecimal behavior, grammar tests, and `src/storage/seeds.js` inputs remain
 the pinned upstream code. Its captured reference is
 `tests/upstream-e781115a.golden.json`.
 
-The first capture passed 14 locale groups, 196 cases, and 980 assertions. CI
-then compares the Android engine with every focused golden case and both full
-seed tapes, in addition to focused unit tests.
+The current capture passed 14 locale groups, 196 cases, and 980 assertions.
+It can be regenerated from the repository's `tests/` directory with the pinned
+QuickJS binary:
+
+```sh
+qjs --bignum --std run-upstream-golden.qjs.js upstream-e781115a.golden.json
+```
+
+CI compares full rendered output (formatted text, result and separator rows,
+edit positions, token values/styles, variables, and diagnostics) for focused
+cases, all 14 locale formats, and both complete seed tapes. Caret-scoped Enter
+has separate oracle cases for multiple pending chains and text following a
+chain, in addition to focused unit tests.
 
 ### Build and test
 

@@ -48,6 +48,14 @@ function resultInsert(edit) {
     value: edit.value,
     width,
     replacement: `${RESULT_SEPARATOR.repeat(width)}\n${edit.value.padStart(width, " ")}`,
+    node: {
+      startOffset: edit.node.startOffset,
+      endOffset: edit.node.endOffset,
+      startLine: edit.node.startLine,
+      startColumn: edit.node.startColumn,
+      endLine: edit.node.endLine,
+      endColumn: edit.node.endColumn,
+    },
   };
 }
 

@@ -5,6 +5,7 @@ import {
   resultBlockAt,
 } from "./tape-engine.js";
 import { TapeHistory } from "./tape-history.js";
+import { applyBeforeInput, removeResultBlockAt } from "./tape-input.js";
 
 const STORAGE_KEY = "qwiktape.android.v1";
 const tapeElement = document.querySelector("#tape");
@@ -12,7 +13,6 @@ const tabsElement = document.querySelector("#tabs");
 const statusElement = document.querySelector("#status");
 const diagnosticsElement = document.querySelector("#diagnostics");
 const histories = new Map();
-let materializeOnNextInput = false;
 
 function id() {
   return globalThis.crypto?.randomUUID?.() ?? `tape-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -77,14 +77,14 @@ function lineAt(text, offset) {
   return text.slice(0, offset).split("\n").length;
 }
 
-function recalculate({ materialize = false, formatCurrentLine = false, record = true } = {}) {
+function recalculate({ formatCurrentLine = false, record = true } = {}) {
   const source = tapeElement.value;
   const selectionStart = tapeElement.selectionStart;
   const selectionEnd = tapeElement.selectionEnd;
   const currentLine = lineAt(source, selectionStart);
   const result = calculateTape({ text: source, ...state.settings });
   const edits = result.edits.filter((edit) => {
-    if (edit.kind === "insert-result") return materialize;
+    if (edit.kind === "insert-result") return false;
     return formatCurrentLine || edit.line !== currentLine;
   });
   const nextText = applyTapeEdits(source, edits);
@@ -232,15 +232,37 @@ function restoreFromHistory(direction) {
 }
 
 function removeResultBlock(block) {
-  const text = tapeElement.value;
-  tapeElement.value = `${text.slice(0, block.start)}${text.slice(block.end)}`;
-  tapeElement.setSelectionRange(block.start, block.start);
+  const outcome = removeResultBlockAt({
+    text: tapeElement.value,
+    selectionStart: tapeElement.selectionStart,
+    settings: state.settings,
+  });
+  if (outcome) applyEnterOutcome(outcome);
+}
+
+function applyEnterOutcome(outcome) {
+  tapeElement.value = outcome.text;
+  tapeElement.setSelectionRange(outcome.selectionStart, outcome.selectionEnd);
   recalculate();
 }
 
-tapeElement.addEventListener("input", () => {
-  recalculate({ materialize: materializeOnNextInput });
-  materializeOnNextInput = false;
+function enterInput(inputType = "insertLineBreak") {
+  return applyBeforeInput({
+    inputType,
+    text: tapeElement.value,
+    selectionStart: tapeElement.selectionStart,
+    selectionEnd: tapeElement.selectionEnd,
+    settings: state.settings,
+  });
+}
+
+tapeElement.addEventListener("input", () => recalculate());
+
+tapeElement.addEventListener("beforeinput", (event) => {
+  const outcome = enterInput(event.inputType);
+  if (!outcome) return;
+  event.preventDefault();
+  applyEnterOutcome(outcome);
 });
 
 tapeElement.addEventListener("blur", () => recalculate({ formatCurrentLine: true }));
@@ -284,19 +306,9 @@ tapeElement.addEventListener("keydown", (event) => {
     return;
   }
 
-  if (event.key === "Enter" && block) {
-    event.preventDefault();
-    const insert = tapeElement.value[block.end] === "\n" ? block.end + 1 : block.end;
-    if (insert === block.end) {
-      tapeElement.value = `${tapeElement.value.slice(0, insert)}\n${tapeElement.value.slice(insert)}`;
-    }
-    tapeElement.setSelectionRange(insert + (insert === block.end ? 1 : 0), insert + (insert === block.end ? 1 : 0));
-    recalculate();
-    return;
-  }
-
   if (event.key === "Enter") {
-    materializeOnNextInput = true;
+    event.preventDefault();
+    applyEnterOutcome(enterInput());
     return;
   }
 
@@ -331,6 +343,8 @@ tapeElement.addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#new-button").addEventListener("click", createTape);
+document.querySelector("#undo-button").addEventListener("click", () => restoreFromHistory("undo"));
+document.querySelector("#redo-button").addEventListener("click", () => restoreFromHistory("redo"));
 document.querySelector("#rename-button").addEventListener("click", () => renameTape());
 document.querySelector("#browse-button").addEventListener("click", () => {
   renderBrowseList();

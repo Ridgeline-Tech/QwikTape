@@ -5,10 +5,12 @@ const files = [
   "app/src/main/assets/tape-parser.js",
   "app/src/main/assets/tape-engine.js",
   "app/src/main/assets/tape-history.js",
+  "app/src/main/assets/tape-input.js",
   "app/src/main/assets/seeds.js",
   "app/src/main/assets/app.js",
   "tests/golden-parity.test.js",
   "tests/tape-engine.unit.test.js",
+  "tests/tape-input.unit.test.js",
 ];
 
 for (const file of files) {
