@@ -71,7 +71,7 @@ jobs:
           ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease --no-daemon
           bash scripts/verify-release-apk.sh app/build/outputs/apk/release/app-release.apk \
             "$QWIKTAPE_RELEASE_CERT_SHA256" construction.ridgeline.qwiktape \
-            1 0.1.0 26
+            2 0.1.1 26
       - name: Discard test identity and APK
         if: always()
         shell: bash
@@ -157,7 +157,7 @@ jobs:
           ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease --no-daemon
           bash scripts/verify-release-apk.sh app/build/outputs/apk/release/app-release.apk \
             "$expected_cert_sha256" construction.ridgeline.qwiktape \
-            1 0.1.0 26
+            2 0.1.1 26
       - name: Retain the verified APK and SHA-256 as a CI artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

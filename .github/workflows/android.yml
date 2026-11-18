@@ -60,7 +60,7 @@ jobs:
 
           badging="$($tools/aapt2 dump badging "$apk")"
           printf '%s\n' "$badging"
-          grep -Fq "package: name='construction.ridgeline.qwiktape.debug' versionCode='1' versionName='0.1.0-debug'" <<<"$badging"
+          grep -Fq "package: name='construction.ridgeline.qwiktape.debug' versionCode='2' versionName='0.1.1-debug'" <<<"$badging"
           grep -Fq "minSdkVersion:'26'" <<<"$badging"
           grep -Fq "targetSdkVersion:'36'" <<<"$badging"
           if grep -Fq "android.permission.INTERNET" <<<"$badging"; then
