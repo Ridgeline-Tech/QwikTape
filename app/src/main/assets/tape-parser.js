@@ -442,7 +442,7 @@ class TapeParser extends BaseParser {
       let padding = this.padding
  
       lhs = $.SUBRULE($.atom)
-      tokens.push(lhs)
+      if(lhs) tokens.push(lhs)
       
       /*$.OPTION({
         GATE: ()=>tokenMatcher(lhs, Identifier) && !lhs.defined,
@@ -461,7 +461,7 @@ class TapeParser extends BaseParser {
               postfix = $.SUBRULE($.postfix)
             if(rhs){
               let last = tokens[tokens.length-1]
-              if(last.startLine != rhs.startLine) {
+              if(last?.startLine != rhs.startLine) {
                 tokens.push(rhs)
                 padding = format(tokens, padding)
               }
@@ -481,8 +481,10 @@ class TapeParser extends BaseParser {
           { GATE: ()=> depth > 0,
            	ALT: ()=>{
               aggregate = $.SUBRULE($.aggregate, {ARGS: [lhs.value, padding]})
-              tokens.push(aggregate)
-              padding = format(tokens, padding)
+              if(aggregate){
+                tokens.push(aggregate)
+                padding = format(tokens, padding)
+              }
               depth = 0
           }},
         ])
