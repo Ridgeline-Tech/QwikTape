@@ -2,7 +2,7 @@ import Decimal from "./vendor/decimal.mjs";
 
 const DIVISION_DECIMAL_PLACES = 113;
 const MAX_POWER_EXPONENT = 10000;
-const MAX_POWER_INTEGER_DIGITS = 10000;
+const MAX_RESULT_INTEGER_DIGITS = 10000;
 const DecimalNumber = Decimal.clone({
   precision: 1000,
   rounding: Decimal.ROUND_HALF_EVEN,
@@ -16,7 +16,14 @@ const IntegerDecimal = Decimal.clone({
   toExpPos: 10000,
 });
 
-const BigNum = (value) => new DecimalNumber(value);
+function ensureMagnitude(value) {
+  if (!value.isFinite() || (!value.isZero() && value.e >= MAX_RESULT_INTEGER_DIGITS)) {
+    throw new RangeError("result is too large");
+  }
+  return value;
+}
+
+const BigNum = (value) => ensureMagnitude(new DecimalNumber(value));
 const NUMBER_LOCALE_STRING = "1,234,567.89";
 
 const groupMatcher = (grouping) => new RegExp(
@@ -37,6 +44,7 @@ const locale = {
 DecimalNumber.prototype.toLocaleString = function toLocaleString(
   decimalDigits = locale.decimalDigits,
 ) {
+  ensureMagnitude(this);
   decimalDigits = Math.max(locale.decimalDigits, decimalDigits);
   const value = this.toFixed(decimalDigits, Decimal.ROUND_HALF_UP);
   const splitValue = value.split(locale.groupMatcher);
@@ -48,6 +56,7 @@ DecimalNumber.prototype.toLocaleString = function toLocaleString(
 DecimalNumber.prototype.toFixedDecimal = function toFixedDecimal(
   decimalDigits = locale.decimalDigits,
 ) {
+  ensureMagnitude(this);
   return this.toFixed(decimalDigits, Decimal.ROUND_HALF_UP);
 };
 
@@ -61,8 +70,13 @@ BigNum.parseString = (string) => {
   const ungrouped = locale.thousandSeperator
     ? string.replaceAll(locale.thousandSeperator, "")
     : string;
-  return new DecimalNumber(ungrouped.replace(locale.decimalSeperator, "."));
+  return BigNum(ungrouped.replace(locale.decimalSeperator, "."));
 };
+
+BigNum.ensureMagnitude = ensureMagnitude;
+BigNum.add = (left, right) => ensureMagnitude(left.plus(right));
+BigNum.subtract = (left, right) => ensureMagnitude(left.minus(right));
+BigNum.multiply = (left, right) => ensureMagnitude(left.times(right));
 
 function integerGcd(left, right) {
   let x = left.abs();
@@ -93,14 +107,16 @@ BigNum.divideExact = (left, right) => {
   if (!hasTerminatingQuotient(left, right)) {
     throw new RangeError("cannot convert to a BigDecimal");
   }
-  return left.div(right);
+  return ensureMagnitude(left.div(right));
 };
 
 BigNum.divide = (left, right) => {
   if (right.isZero()) throw new RangeError("division by zero");
-  return left.div(right).toDecimalPlaces(
-    DIVISION_DECIMAL_PLACES,
-    Decimal.ROUND_HALF_EVEN,
+  return ensureMagnitude(
+    left.div(right).toDecimalPlaces(
+      DIVISION_DECIMAL_PLACES,
+      Decimal.ROUND_HALF_EVEN,
+    ),
   );
 };
 
@@ -113,11 +129,11 @@ BigNum.power = (left, right) => {
   // magnitudes >= 1. Reject oversized output before pow/toFixed can allocate it.
   if (
     magnitude.greaterThanOrEqualTo(1)
-    && right.times(magnitude.e + 1).greaterThan(MAX_POWER_INTEGER_DIGITS)
+    && right.times(magnitude.e + 1).greaterThan(MAX_RESULT_INTEGER_DIGITS)
   ) {
     throw new RangeError("power result is too large");
   }
-  return left.pow(right);
+  return ensureMagnitude(left.pow(right));
 };
 
 const BigNumEnv = {

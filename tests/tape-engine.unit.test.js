@@ -80,6 +80,31 @@ test("oversized powers fail quickly and leave the accumulator unchanged", () => 
   );
 });
 
+test("result magnitude bound stops variable squaring without rejecting valid large values", () => {
+  const valid = calculateTape({ text: "a = 10 ^ 4999\nb = a × a\n" });
+  assert.deepEqual(valid.diagnostics, []);
+  assert.equal(valid.variables.a, "1e+4999");
+  assert.equal(valid.variables.b, "1e+9998");
+
+  const names = "abcdefghijklm";
+  const lines = ["a = 10 ^ 4999"];
+  for (let index = 1; index < names.length; index += 1) {
+    lines.push(`${names[index]} = ${names[index - 1]} × ${names[index - 1]}`);
+  }
+
+  const started = performance.now();
+  const bounded = calculateTape({ text: `${lines.join("\n")}\n` });
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed < 1500, `variable squaring guard took ${elapsed.toFixed(1)} ms`);
+  assert.equal(bounded.variables.a, "1e+4999");
+  for (const name of names.slice(1)) assert.equal(bounded.variables[name], "1e+9998");
+
+  const errors = bounded.diagnostics.filter((item) => item.kind === "evaluation");
+  assert.equal(errors.length, names.length - 2);
+  assert.ok(errors.every((item) => /result is too large/.test(item.message)));
+  assert.ok(errors.every((item) => item.token.styles.includes("Error")));
+});
+
 test("invalid locale falls back to default without leaking prior call state", () => {
   const insertValue = (locale) => calculateTape({
     text: "1234567\n+ 1234567\n",
