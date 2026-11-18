@@ -70,6 +70,15 @@ export function bindHistoryControl(button, direction, restore) {
   button.addEventListener("click", () => restore(direction));
 }
 
+export function runInputRecalculation(recalculate, report = console.error) {
+  try {
+    return recalculate();
+  } catch (error) {
+    report("QwikTape input recalculation failed; editor text was preserved.", error);
+    return null;
+  }
+}
+
 export function removeResultBlockAt({ text, selectionStart, settings = {} }) {
   const block = resultBlockAt(text, selectionStart);
   if (!block) return null;

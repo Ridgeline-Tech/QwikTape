@@ -115,3 +115,60 @@ test("invalid locale falls back to default without leaking prior call state", ()
   assert.equal(insertValue("de-DE"), "2,469,134.00");
   assert.equal(insertValue("1'234'567.89"), "2'469'134.00");
 });
+
+test("incomplete trailing operators produce diagnostics without throwing", () => {
+  const result = calculateTape({ text: "1-" });
+
+  assert.deepEqual(result.tokens.map((token) => token.image), ["1", "-"]);
+  assert.equal(result.edits.some((edit) => edit.kind === "insert-result"), false);
+  assert.ok(result.diagnostics.some((diagnostic) => diagnostic.kind === "parser"));
+});
+
+test("unexpected calculation failures return a contained engine diagnostic", () => {
+  const result = calculateTape({
+    text: { toString() { throw new Error("injected failure"); } },
+  });
+
+  assert.deepEqual(result.edits, []);
+  assert.deepEqual(result.tokens, []);
+  assert.deepEqual(result.variables, {});
+  assert.equal(result.diagnostics.length, 1);
+  assert.equal(result.diagnostics[0].kind, "engine");
+  assert.match(result.diagnostics[0].message, /injected failure/);
+  assert.deepEqual(calculateTape(), {
+    edits: [],
+    tokens: [],
+    diagnostics: [],
+    variables: {},
+  });
+});
+
+test("seeded incomplete-input fuzz never throws and stays bounded", () => {
+  const corpusSize = 4_039;
+  const alphabet = "0123456789+-*/×÷^%()= abcdef\n.,";
+  let state = 0x51a7c0de;
+  const next = () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+    return state;
+  };
+  const inputs = ["1-"];
+
+  while (inputs.length < corpusSize) {
+    const length = next() % 33;
+    let text = "";
+    for (let index = 0; index < length; index += 1) {
+      text += alphabet[next() % alphabet.length];
+    }
+    inputs.push(text);
+  }
+
+  const started = performance.now();
+  for (const text of inputs) {
+    const result = calculateTape({ text });
+    assert.ok(Array.isArray(result.tokens), JSON.stringify({ text }));
+    assert.ok(Array.isArray(result.edits), JSON.stringify({ text }));
+    assert.ok(Array.isArray(result.diagnostics), JSON.stringify({ text }));
+  }
+  const elapsed = performance.now() - started;
+  assert.ok(elapsed < 5_000, `seeded fuzz took ${elapsed.toFixed(1)} ms`);
+});

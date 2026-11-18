@@ -73,6 +73,30 @@ function formattingEdit(token) {
   };
 }
 
+function engineFailure(error, lex) {
+  let message = "Unexpected tape calculation failure";
+  try {
+    if (error instanceof Error && error.message) message = error.message;
+    else if (error !== undefined) message = String(error);
+  } catch (_messageError) {
+    // Keep the no-throw boundary even when an unusual thrown value cannot be stringified.
+  }
+
+  let tokens = [];
+  try { tokens = (lex?.tokens ?? []).map(publicToken); } catch (_tokenError) { /* no-op */ }
+
+  return {
+    edits: [],
+    tokens,
+    diagnostics: [{
+      kind: "engine",
+      name: error instanceof Error ? error.name : "Error",
+      message: `Tape calculation failed: ${message}`,
+    }],
+    variables: {},
+  };
+}
+
 /**
  * Pure tape calculation boundary shared by the Android DOM shell and tests.
  * It performs no DOM, storage, Android, print, or construction-unit work.
@@ -82,49 +106,55 @@ export function calculateTape({
   locale = "1,234,567.89",
   decimalDigits = 2,
   padding = 10,
-}) {
-  const safeDigits = Math.min(50, Math.max(0, Number(decimalDigits) || 0));
-  const safePadding = Math.max(1, Number(padding) || 1);
-  QwikTape.changeLocale(locale, safeDigits);
+} = {}) {
+  let lex;
+  try {
+    const source = typeof text === "string" ? text : String(text ?? "");
+    const safeDigits = Math.min(50, Math.max(0, Number(decimalDigits) || 0));
+    const safePadding = Math.max(1, Number(padding) || 1);
+    QwikTape.changeLocale(locale, safeDigits);
 
-  const lex = QwikTape.lexer.tokenize(text);
-  QwikTape.parser.input = lex.tokens;
-  const ast = QwikTape.parser.tape({ decimalDigits: safeDigits, padding: safePadding });
+    lex = QwikTape.lexer.tokenize(source);
+    QwikTape.parser.input = lex.tokens;
+    const ast = QwikTape.parser.tape({ decimalDigits: safeDigits, padding: safePadding }) ?? [];
 
-  const tokens = lex.tokens.map(publicToken);
-  const edits = [
-    ...lex.tokens
-      .filter((token) => token.formatting !== undefined || token.padding !== undefined)
-      .map(formattingEdit),
-    ...ast
-      .filter((edit) => edit?.type === QwikTape.tokenType.Insert)
-      .map(resultInsert),
-  ];
+    const tokens = lex.tokens.map(publicToken);
+    const edits = [
+      ...lex.tokens
+        .filter((token) => token.formatting !== undefined || token.padding !== undefined)
+        .map(formattingEdit),
+      ...ast
+        .filter((edit) => edit?.type === QwikTape.tokenType.Insert)
+        .map(resultInsert),
+    ];
 
-  const tokenDiagnostics = tokens
-    .filter((token) => token.styles.includes("Error"))
-    .map((token) => ({
-      kind: "evaluation",
-      message: token.tooltip || "Invalid tape value",
-      token,
-    }));
+    const tokenDiagnostics = tokens
+      .filter((token) => token.styles.includes("Error"))
+      .map((token) => ({
+        kind: "evaluation",
+        message: token.tooltip || "Invalid tape value",
+        token,
+      }));
 
-  const diagnostics = [
-    ...lex.errors.map((error) => ({
-      kind: "lexer",
-      name: error.name,
-      message: error.message,
-      offset: error.offset,
-    })),
-    ...QwikTape.parser.errors.map(publicError),
-    ...tokenDiagnostics,
-  ];
+    const diagnostics = [
+      ...lex.errors.map((error) => ({
+        kind: "lexer",
+        name: error.name,
+        message: error.message,
+        offset: error.offset,
+      })),
+      ...QwikTape.parser.errors.map(publicError),
+      ...tokenDiagnostics,
+    ];
 
-  const variables = Object.fromEntries(
-    Object.entries(QwikTape.parser._vars).map(([name, value]) => [name, decimalText(value)]),
-  );
+    const variables = Object.fromEntries(
+      Object.entries(QwikTape.parser._vars).map(([name, value]) => [name, decimalText(value)]),
+    );
 
-  return { edits, tokens, diagnostics, variables };
+    return { edits, tokens, diagnostics, variables };
+  } catch (error) {
+    return engineFailure(error, lex);
+  }
 }
 
 export function applyTapeEdits(text, edits) {

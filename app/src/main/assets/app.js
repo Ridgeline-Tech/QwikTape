@@ -9,6 +9,7 @@ import {
   applyBeforeInput,
   bindHistoryControl,
   removeResultBlockAt,
+  runInputRecalculation,
 } from "./tape-input.js";
 
 const STORAGE_KEY = "qwiktape.android.v1";
@@ -260,7 +261,7 @@ function enterInput(inputType = "insertLineBreak") {
   });
 }
 
-tapeElement.addEventListener("input", () => recalculate());
+tapeElement.addEventListener("input", () => runInputRecalculation(recalculate));
 
 tapeElement.addEventListener("beforeinput", (event) => {
   const outcome = enterInput(event.inputType);
