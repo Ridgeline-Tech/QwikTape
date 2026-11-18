@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f36">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>QwikTape</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">=</span>
+      <span>QwikTape</span>
+    </div>
+    <nav class="actions" aria-label="Tape actions">
+      <button id="undo-button" type="button" title="Undo (Ctrl+Z)">Undo</button>
+      <button id="redo-button" type="button" title="Redo (Ctrl+Y)">Redo</button>
+      <button id="browse-button" type="button" title="Browse tapes">Browse</button>
+      <button id="new-button" type="button" title="New tape (Ctrl+N)">New</button>
+      <button id="rename-button" type="button">Rename</button>
+      <button id="settings-button" type="button" title="Settings">Settings</button>
+      <button id="about-button" type="button" title="About and licenses">About</button>
+    </nav>
+  </header>
+
+  <div id="tabs" class="tabs" role="tablist" aria-label="Open tapes"></div>
+
+  <main>
+    <label class="sr-only" for="tape">Tape</label>
+    <textarea
+      id="tape"
+      aria-describedby="status"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      wrap="off"
+    ></textarea>
+  </main>
+
+  <footer>
+    <div id="status" role="status">Ready</div>
+    <div id="diagnostics" aria-live="polite"></div>
+  </footer>
+
+  <dialog id="browse-dialog">
+    <form method="dialog" class="dialog-shell">
+      <header><h2>All tapes</h2><button value="cancel" aria-label="Close">×</button></header>
+      <div id="browse-list" class="browse-list"></div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog">
+    <form method="dialog" id="settings-form" class="dialog-shell">
+      <header><h2>Settings</h2><button value="cancel" aria-label="Close">×</button></header>
+      <label>Number format
+        <select id="locale-setting">
+          <option value="1,234,567.89">1,234,567.89</option>
+          <option value="1.234.567,89">1.234.567,89</option>
+          <option value="1 234 567.89">1 234 567.89</option>
+          <option value="1 234 567,89">1 234 567,89</option>
+          <option value="12,34,567.89">12,34,567.89</option>
+        </select>
+      </label>
+      <label>Decimal digits (0–50)
+        <input id="digits-setting" type="number" min="0" max="50" step="1">
+      </label>
+      <label>Minimum padding
+        <input id="padding-setting" type="number" min="1" max="80" step="1">
+      </label>
+      <label class="check"><input id="operators-setting" type="checkbox"> Show × and ÷ when typing * and /</label>
+      <label class="check"><input id="escape-setting" type="checkbox"> Escape clears the active tape</label>
+      <p class="note">PDF export is deferred in this Android port. The editable tape remains locally saved.</p>
+      <menu><button value="cancel">Cancel</button><button id="save-settings" value="default">Save</button></menu>
+    </form>
+  </dialog>
+
+  <dialog id="about-dialog">
+    <form method="dialog" class="dialog-shell">
+      <header><h2>About QwikTape</h2><button value="cancel" aria-label="Close">×</button></header>
+      <p>A local Android port of QwikTape. No network permission is requested and no Sciter component is bundled.</p>
+      <p>QwikTape © 2022 Viral Ghelani, MIT. Chevrotain 10.5.0, Apache-2.0. decimal.js 10.6.0, MIT. Reused QwikTape assets are attributed under CC BY 4.0.</p>
+      <p>Android/WebView changes © 2026 Ridgeline Technology.</p>
+    </form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

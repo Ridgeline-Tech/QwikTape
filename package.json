@@ -1,0 +1,15 @@
+{
+  "name": "qwiktape-android",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:golden": "node --test --test-isolation=none tests/golden-parity.test.js",
+    "test:unit": "node --test --test-isolation=none tests/*.unit.test.js",
+    "lint:web": "node scripts/lint-web.mjs",
+    "check": "npm run test:golden && npm run test:unit && npm run lint:web"
+  },
+  "dependencies": {
+    "decimal.js": "10.6.0"
+  }
+}

@@ -1,0 +1,31 @@
+QwikTape Android/WebView port
+================================
+
+This repository is based on QwikTape by Viral Ghelani.
+
+QwikTape application code
+Copyright (c) 2022 Viral Ghelani
+Licensed under the MIT License. See LICENSE.
+Source: https://github.com/4silvertooth/QwikTape
+Pinned source revision: e781115a9dd2168e4933f95ed7eb88c82a5c9318
+
+Chevrotain 10.5.0
+Copyright (c) 2015 SAP SE or an SAP affiliate company
+Licensed under the Apache License 2.0. See third_party/APACHE-2.0.txt.
+Source: https://github.com/Chevrotain/chevrotain
+
+decimal.js 10.6.0
+Copyright (c) 2025 Michael Mclaughlin
+Licensed under the MIT License.
+Source: https://github.com/MikeMcl/decimal.js
+
+QwikTape visual assets
+Licensed by the upstream author under Creative Commons Attribution 4.0.
+Source and attribution: https://github.com/4silvertooth/QwikTape
+License: https://creativecommons.org/licenses/by/4.0/
+
+Change notice — 2026-11-17
+Ridgeline Technology adapted QwikTape for Android as a local-only WebView app.
+The port replaces Sciter, QuickJS BigDecimal, Sciter storage, and Sciter DOM
+APIs with browser DOM/localStorage and decimal.js. It adds a pure JavaScript
+tape engine, Android packaging, tests, and CI. No Sciter component is bundled.

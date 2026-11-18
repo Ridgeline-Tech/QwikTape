@@ -1,0 +1,5 @@
+# Preserve the pinned upstream fixture/parser formatting exactly. These files
+# intentionally retain whitespace from e781115a for source-level comparison.
+app/src/main/assets/seeds.js -whitespace
+app/src/main/assets/tape-parser.js -whitespace
+app/src/main/assets/vendor/chevrotain.min.js -whitespace
