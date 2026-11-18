@@ -442,7 +442,7 @@ class TapeParser extends BaseParser {
       let padding = this.padding
  
       lhs = $.SUBRULE($.atom)
-      tokens.push(lhs)
+      if(lhs) tokens.push(lhs)
       
       /*$.OPTION({
         GATE: ()=>tokenMatcher(lhs, Identifier) && !lhs.defined,
@@ -461,19 +461,19 @@ class TapeParser extends BaseParser {
               postfix = $.SUBRULE($.postfix)
             if(rhs){
               let last = tokens[tokens.length-1]
-              if(last.startLine != rhs.startLine) {
+              if(last?.startLine != rhs.startLine) {
                 tokens.push(rhs)
                 padding = format(tokens, padding)
               }
             }  
             $.ACTION(()=>{
-              if(!rhs) return
               if(postfix){
                 evaluatePostfix(lhs, op, rhs, postfix)
               }
               else {
                 evaluate(lhs, op, rhs)
               }
+              if(!hasValue(lhs) || !hasValue(rhs)) return
               depth++
             })
             } 
@@ -481,8 +481,10 @@ class TapeParser extends BaseParser {
           { GATE: ()=> depth > 0,
            	ALT: ()=>{
               aggregate = $.SUBRULE($.aggregate, {ARGS: [lhs.value, padding]})
-              tokens.push(aggregate)
-              padding = format(tokens, padding)
+              if(aggregate){
+                tokens.push(aggregate)
+                padding = format(tokens, padding)
+              }
               depth = 0
           }},
         ])
@@ -667,6 +669,7 @@ class TapeParser extends BaseParser {
             $.CONSUME(ResultEqual)
             identifier = $.CONSUME(SuffixIdentifier)
             $.ACTION(()=>{
+              if(!hasValue(number)) return
               const key = identifier.image
               if(key in this._vars){
                 Object.assign(identifier, {style: ['Error'], tooltip: 'Already defined.'})
@@ -688,6 +691,7 @@ class TapeParser extends BaseParser {
       $.OPTION2(()=>$.CONSUME(Annotation))
 
       return $.ACTION(()=>{
+        if(!hasValue(number)) return
         const node = {
           startLine: nl.startLine,     startColumn: nl.startColumn, 
           endLine:   number.endLine,   endColumn:number.endColumn,
@@ -792,7 +796,7 @@ class TapeParser extends BaseParser {
       return $.ACTION(()=>{
         if(!number?.payload?.parse){
           evaluationError(number ?? negetive ?? lastToken, 'Incomplete number.')
-          return number
+          return
         }
         let ws = number.startColumn
         if(!tokenMatcher(lastToken, EOF)) {

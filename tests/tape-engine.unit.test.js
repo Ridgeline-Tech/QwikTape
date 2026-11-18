@@ -159,23 +159,76 @@ for (const incomplete of ["b=÷0", "x=×x", "b = ÷ 2"]) {
   });
 }
 
+for (const incomplete of ["5-3\n═-u", "5-a\n═\n!"]) {
+  test(`recovered result syntax keeps unrelated tape results: ${JSON.stringify(incomplete)}`, () => {
+    const text = `a = 5\n100\n+ 200\n\n${incomplete}\n\n50\n× a\n`;
+    const result = calculateTape({ text });
+
+    assert.deepEqual(
+      result.edits.filter((edit) => edit.kind === "insert-result").map((edit) => edit.value),
+      ["300.00", "250.00"],
+    );
+    assert.deepEqual(result.variables, { a: "5" });
+    assert.equal(result.diagnostics.some((diagnostic) => diagnostic.kind === "engine"), false);
+    assert.ok(result.diagnostics.some((diagnostic) => diagnostic.kind === "parser"));
+  });
+}
+
+for (const incomplete of [
+  "3-5\n═÷5",
+  "0-5\n═÷2",
+  "0-t\n═÷0",
+  "5+x\n═^0",
+  "-a-5\n═×3",
+  "0^u\n═\n\n-5",
+  "0-a\n═\n\n-5",
+  "5-5\n═\n=-a",
+]) {
+  test(`recovered aggregate keeps surrounding rows: ${JSON.stringify(incomplete)}`, () => {
+    const text = `a = 5\n100\n+ 200\n\n${incomplete}\n\n50\n× 5\n`;
+    const result = calculateTape({ text });
+    const insertedResults = result.edits
+      .filter((edit) => edit.kind === "insert-result")
+      .map((edit) => edit.value);
+
+    assert.equal(insertedResults[0], "300.00");
+    assert.equal(insertedResults.at(-1), "250.00");
+    assert.deepEqual(result.variables, { a: "5" });
+    assert.equal(result.diagnostics.some((diagnostic) => diagnostic.kind === "engine"), false);
+    assert.ok(result.diagnostics.length > 0);
+  });
+}
+
 test("seeded incomplete-input fuzz never throws and stays bounded", () => {
-  const corpusSize = 4_039;
-  const alphabet = "0123456789+-*/×÷^%()= abcdef\n.,";
+  const corpusSize = 4_096;
+  const fragments = [
+    "0", "1", "5", ".", ",", " ", "(", ")",
+    "+", "-", "×", "÷", "*", "/", "^", "%", "=",
+    "a", "b", "u", "foo", "!", "═", "\n", "%⥱",
+  ];
+  const requiredFragments = [
+    "═÷5", "═×3", "═^0", "═-5", "═+5",
+    "═\n\n-5", "═\n=-a", "-5", "%⥱",
+    "═", "+", "-", "×", "÷", "^", "%", "a", "b", "!", "\n",
+  ];
   const inputs = [];
 
-  for (const seed of [0x51a7c0de, 0x73d0cafe]) {
+  for (const seed of [0x51a7c0de, 0x73d0cafe, 0xdeadbeef, 0xc001d00d]) {
     let state = seed;
     const next = () => {
       state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
       return state;
     };
-    const seededInputs = ["1-"];
+    const seededInputs = [
+      "1-", "5-3\n═-u", "5-a\n═\n!",
+      "3-5\n═÷5", "0-5\n═÷2", "0-t\n═÷0", "5+x\n═^0",
+      "-a-5\n═×3", "0^u\n═\n\n-5", "0-a\n═\n\n-5", "5-5\n═\n=-a",
+    ];
     while (seededInputs.length < corpusSize) {
-      const length = next() % 33;
-      let text = "";
-      for (let index = 0; index < length; index += 1) {
-        text += alphabet[next() % alphabet.length];
+      const fragmentCount = next() % 17;
+      let text = requiredFragments[seededInputs.length % requiredFragments.length];
+      for (let index = 0; index < fragmentCount; index += 1) {
+        text += fragments[next() % fragments.length];
       }
       seededInputs.push(text);
     }
