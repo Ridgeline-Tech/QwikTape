@@ -5,6 +5,19 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+val releaseStoreFile = providers.environmentVariable("QWIKTAPE_RELEASE_KEYSTORE_FILE").orNull
+val releaseStorePassword = providers.environmentVariable("QWIKTAPE_RELEASE_STORE_PASSWORD").orNull
+val releaseKeyAlias = providers.environmentVariable("QWIKTAPE_RELEASE_KEY_ALIAS").orNull
+val releaseKeyPassword = providers.environmentVariable("QWIKTAPE_RELEASE_KEY_PASSWORD").orNull
+val releaseCertificate = providers.environmentVariable("QWIKTAPE_RELEASE_CERT_SHA256").orNull
+val releaseSigningReady = listOf(
+    releaseStoreFile,
+    releaseStorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+    releaseCertificate,
+).all { !it.isNullOrBlank() }
+
 android {
     namespace = "construction.ridgeline.qwiktape"
     compileSdk = 36
@@ -18,6 +31,18 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningReady) {
+                storeFile = file(releaseStoreFile!!)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+                storeType = "PKCS12"
+            }
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
@@ -25,8 +50,7 @@ android {
         }
         release {
             isMinifyEnabled = false
-            // Production signing is intentionally not configured in source.
-            // CI builds only the throwaway/test-signed debug artifact.
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
@@ -41,6 +65,19 @@ android {
         // Hosted runners may carry the Android 17 preview SDK. Keep the app on
         // current stable API 36 until adopting preview runtime behavior is deliberate.
         disable += "OldTargetApi"
+    }
+}
+
+tasks.configureEach {
+    if (name in setOf("preReleaseBuild", "packageRelease", "bundleRelease")) {
+        doFirst {
+            if (!releaseSigningReady || !file(releaseStoreFile!!).isFile) {
+                throw GradleException(
+                    "Release signing is unavailable. Configure the dedicated QwikTape " +
+                        "PKCS12 identity; no debug or unsigned fallback is permitted.",
+                )
+            }
+        }
     }
 }
 
