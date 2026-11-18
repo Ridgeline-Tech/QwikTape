@@ -2,10 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   applyTapeEdits,
-  calculateTape,
+  calculateTape as calculateTapeCore,
   resultBlockAt,
 } from "../app/src/main/assets/tape-engine.js";
 import { BigNum } from "../app/src/main/assets/bignum.js";
+
+function calculateTape(options) {
+  const result = calculateTapeCore(options);
+  assert.deepEqual(calculateTapeCore({ ...options, extension: null }), result);
+  return result;
+}
 
 test("returns the pure engine contract and materializes a result block", () => {
   const text = "100\n+ 200\n× 3\n";

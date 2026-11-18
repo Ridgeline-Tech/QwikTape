@@ -3,6 +3,60 @@ import { default as chevrotain } from "./vendor/chevrotain.min.js";
 import { BigNum, BigNumEnv } from "./bignum.js";
 
 // ----------------- lexer -----------------
+let activeExtension = null
+let extensionMatcherDiagnostics = []
+let reportedMatcherFailures = new Set()
+
+function recordMatcherFailure(kind, error, offset) {
+  if(reportedMatcherFailures.has(kind)) return
+  reportedMatcherFailures.add(kind)
+  extensionMatcherDiagnostics.push({
+    kind: 'extension',
+    name: 'ExtensionMatcherError',
+    message: `${kind} failed: ${String(error)}`,
+    offset,
+  })
+}
+
+function extensionMatch(kind, text, offset) {
+  let matcher
+  try {
+    matcher = activeExtension?.[kind]
+  }
+  catch(error) {
+    recordMatcherFailure(kind, error, offset)
+    return null
+  }
+  if (typeof matcher !== "function") return null
+
+  let descriptor
+  try {
+    descriptor = matcher(text, offset)
+    if (descriptor === null || descriptor === undefined) return null
+    if (!Number.isInteger(descriptor.length) || descriptor.length <= 0 ||
+        offset + descriptor.length > text.length || !("value" in descriptor)) {
+      throw new TypeError(`${kind} returned an invalid descriptor`)
+    }
+    if (descriptor.formatting !== undefined && typeof descriptor.formatting !== "string") {
+      throw new TypeError(`${kind} formatting must be a string`)
+    }
+  }
+  catch(error) {
+    recordMatcherFailure(kind, error, offset)
+    return null
+  }
+
+  const match = [text.slice(offset, offset + descriptor.length)]
+  match.index = offset
+  match.input = text
+  match.payload = {
+    extension: true,
+    value: descriptor.value,
+    formatting: descriptor.formatting,
+  }
+  return match
+}
+
 const CstParser = chevrotain.CstParser;
 const createToken = chevrotain.createToken;
 const Lexer = chevrotain.Lexer;
@@ -23,6 +77,21 @@ const NewLine = createToken({ name: "NewLine",  pattern: /\r?\n/});
 const LParen = createToken({ name: "LParen", pattern: /\(/ });
 const RParen = createToken({ name: "RParen", pattern: /\)/ });
 const Pow = createToken({ name: "Power", pattern: /\^/, categories: [Operator] });
+const ExtensionPrefix = createToken({
+  name: "ExtensionPrefix",
+  pattern: (text, offset) => extensionMatch("matchPrefix", text, offset),
+  line_breaks: false,
+})
+const ExtensionLiteral = createToken({
+  name: "ExtensionLiteral",
+  pattern: (text, offset) => extensionMatch("matchLiteral", text, offset),
+  line_breaks: false,
+})
+const ExtensionPostfix = createToken({
+  name: "ExtensionPostfix",
+  pattern: (text, offset) => extensionMatch("matchPostfix", text, offset),
+  line_breaks: false,
+})
 
 //not using ; in the parser code below to reduce noise
 
@@ -183,14 +252,32 @@ Minus.LABEL = "-";
 Percentage.LABEL = "'%' ⥱ value?";
 DefinedIdentifier.LABEL = "Defined Identifier";
 
-const tokens = [
+const nativeTokens = [
   WhiteSpace, Seperator, NewLine,
   SuffixIdentifier,
   LParen,RParen,
   Plus, Minus,
   Mult, Div,  Pow,
   ResultEqual, Equal,
+  Percentage,
+  Annotation,
+  NumberLiteral,
+  Variable, Identifier, DefinedIdentifier,
+  Text,
+  Operator,
+]
+
+const extensionTokens = [
+  WhiteSpace, Seperator, NewLine,
+  SuffixIdentifier,
+  LParen,RParen,
+  ExtensionPrefix,
+  Plus, Minus,
+  Mult, Div,  Pow,
+  ResultEqual, Equal,
+  ExtensionLiteral,
   Percentage,  
+  ExtensionPostfix,
   Annotation,
   NumberLiteral,
   Variable, Identifier, DefinedIdentifier,
@@ -198,28 +285,32 @@ const tokens = [
   Operator,
 ]
 
-const TapeLexer = new Lexer(tokens, {
+const lexerOptions = {
   //positionTracking?: "full" | "onlyStart" | "onlyOffset"
   positionTracking: 'full'
-})
+}
+const TapeLexer = new Lexer(nativeTokens, lexerOptions)
 
 // ----------------- parser -----------------
 class TapeParser extends BaseParser {
 
   _vars = {}
+  _varExtensions = {}
   minPad = 1
   
-  constructor() {
-    super(tokens, {
+  constructor(tokenVocabulary = nativeTokens, extensionEnabled = false) {
+    super(tokenVocabulary, {
       maxLookahead: 2,
       skipValidations: true,
       outputCst: false,
       recoveryEnabled: true,
     })
+    this.extensionEnabled = extensionEnabled
     const $ = this
 
     this.RULE("tape", (objectArgs={decimalDigits: 2, padding: 10})=>{
       this._vars = {}
+      this._varExtensions = {}
       let tape = []
       let row
       Object.assign(this, objectArgs)
@@ -249,6 +340,38 @@ class TapeParser extends BaseParser {
       return row
     })
 
+    const adapterCall = (method, ...args)=>{
+      const adapter = this.extension?.valueAdapter
+      if (!adapter || typeof adapter[method] !== "function") {
+        throw new TypeError(`extension.valueAdapter.${method} is required`)
+      }
+      return adapter[method](...args, {
+        decimalDigits: this.decimalDigits,
+        padding: this.padding,
+      })
+    }
+
+    const isExtensionValue = (token)=> token?.extensionValue === true
+    const toExtensionValue = (token)=> isExtensionValue(token)
+      ? token.value
+      : adapterCall("fromDecimal", token.value)
+    const fixedValue = (token)=> isExtensionValue(token)
+      ? String(adapterCall("fixedValue", token.value))
+      : token.value.toFixedDecimal()
+    const displayValue = (token)=> isExtensionValue(token)
+      ? String(adapterCall("formatValue", token.value))
+      : token.value.toLocaleString()
+    const percentageValue = (value)=> String(adapterCall("formatPercentageValue", value))
+    const operatorSymbol = (operator)=>{
+      if (operator?.image) return operator.image
+      if (tokenMatcher(operator, Plus)) return "+"
+      if (tokenMatcher(operator, Minus)) return "-"
+      if (tokenMatcher(operator, Mult)) return "×"
+      if (tokenMatcher(operator, Div)) return "÷"
+      if (tokenMatcher(operator, Pow)) return "^"
+      throw new TypeError("unsupported extension operator")
+    }
+
     const format = (tokens, padding)=>{
       return $.ACTION(()=>{
         let lastToken = tokens[tokens.length-1]
@@ -258,6 +381,13 @@ class TapeParser extends BaseParser {
             if(startColumn - ws + payload.decimalPosition > padding) {
               const startOffset = startColumn - ws
               padding = startOffset + payload.decimalPosition + this.minPad
+            }
+          }
+          else if(tokenMatcher(lastToken, ExtensionLiteral)){
+            const startOffset = lastToken.startColumn - (lastToken.ws ?? 0)
+            const display = lastToken.formatting ?? lastToken.image
+            if(startOffset + display.length > padding) {
+              padding = startOffset + display.length + this.minPad
             }
           }
           else { //either Identifier or DefinedIdentifier
@@ -272,7 +402,7 @@ class TapeParser extends BaseParser {
         //group of token inside expression
         tokens.forEach((token)=>{
           if(!token) return
-          if(!tokenMatcher(token, NumberLiteral)){
+          if(!tokenMatcher(token, NumberLiteral) && !tokenMatcher(token, ExtensionLiteral)){
             const { startColumn, payload } = token
             const desiredPadding = padding - (startColumn + token.image.length - this.decimalDigits - 1)
             if(token.padding != desiredPadding){
@@ -282,10 +412,15 @@ class TapeParser extends BaseParser {
             }
             return
           }
-          //token is now NumberLiteral
+          //token is now a native or extension literal
           const { startColumn, payload } = token
-          const localeString = payload.parse.toLocaleString(payload.decimalDigits)
-          const localeDecimalPosition = localeString.length - Math.max(payload.decimalDigits, this.decimalDigits)
+          const extensionLiteral = tokenMatcher(token, ExtensionLiteral)
+          const localeString = extensionLiteral
+            ? token.formatting ?? token.image
+            : payload.parse.toLocaleString(payload.decimalDigits)
+          const localeDecimalPosition = extensionLiteral
+            ? localeString.length
+            : localeString.length - Math.max(payload.decimalDigits, this.decimalDigits)
           const desiredPadding = padding + this.minPad - (startColumn + localeDecimalPosition)
 
           if(token.padding != desiredPadding){
@@ -294,7 +429,7 @@ class TapeParser extends BaseParser {
             })
           }
 
-          if(payload.formatted && payload.decimalDigits > this.decimalDigits){ //trim unwanted zeros behind
+          if(!extensionLiteral && payload.formatted && payload.decimalDigits > this.decimalDigits){ //trim unwanted zeros behind
             if(token.value.canTrimZeros(payload.decimalDigits)){
               Object.assign(token, {
                 formatting: payload.parse.toLocaleString()
@@ -324,13 +459,60 @@ class TapeParser extends BaseParser {
 
     const hasValue = (token)=> token?.value !== undefined
 
+    const applyDescriptorFormatting = (token)=>{
+      if(token?.payload?.formatting !== undefined && token.image !== token.payload.formatting) {
+        Object.assign(token, {formatting: token.payload.formatting})
+      }
+    }
+
+    const applyDecorators = (token, prefix, postfix)=>{
+      if(!token) {
+        evaluationError(prefix ?? postfix, 'Incomplete expression.')
+        return token
+      }
+      for (const [decorator, method, args] of [
+        [prefix, "applyPrefix", (value)=>[prefix.payload.value, value]],
+        [postfix, "applyPostfix", (value)=>[value, postfix.payload.value]],
+      ]) {
+        if(!decorator) continue
+        applyDescriptorFormatting(decorator)
+        const previousValue = token.value
+        const previousExtension = token.extensionValue
+        try {
+          if(decorator.payload.error) throw decorator.payload.error
+          const value = toExtensionValue(token)
+          token.value = adapterCall(method, ...args(value))
+          token.extensionValue = true
+        }
+        catch(error) {
+          token.value = previousValue
+          token.extensionValue = previousExtension
+          evaluationError(decorator, error)
+        }
+      }
+      return token
+    }
+
     const evaluate = (x, operator, y)=>{
       return $.ACTION(()=>{
         if(!hasValue(x) || !hasValue(y)){
           evaluationError(y ?? operator ?? x, 'Incomplete expression.')
           return x
         }
+        const previousValue = x.value
+        const previousExtension = x.extensionValue
         try {
+          if(isExtensionValue(x) || isExtensionValue(y)) {
+            x.value = adapterCall(
+              "evaluate",
+              toExtensionValue(x),
+              operatorSymbol(operator),
+              toExtensionValue(y),
+            )
+            x.extensionValue = true
+            return x.value
+          }
+
           if (tokenMatcher(operator, Plus)) {
             return x.value = BigNum.add(x.value, y.value)
           }  
@@ -364,6 +546,8 @@ class TapeParser extends BaseParser {
           throw "Error: This operator is not yet supported"
         }
         catch(e){
+          x.value = previousValue
+          x.extensionValue = previousExtension
           evaluationError(y ?? operator ?? x, e)
           return x
         }
@@ -374,6 +558,7 @@ class TapeParser extends BaseParser {
     const evaluatePostfix = (x, operator, y, postfix)=>{
       let result
       let _y
+      let extensionPercentage = false
 
       if(!hasValue(x) || !hasValue(y)){
         evaluationError(y ?? operator ?? x, 'Incomplete expression.')
@@ -381,7 +566,22 @@ class TapeParser extends BaseParser {
       }
 
       result = $.ACTION(()=>{
+        const previousValue = x.value
+        const previousExtension = x.extensionValue
         try {
+          if(isExtensionValue(x) || isExtensionValue(y)) {
+            extensionPercentage = true
+            _y = adapterCall("percentageOfOne", toExtensionValue(y))
+            x.value = adapterCall(
+              "evaluatePercentage",
+              toExtensionValue(x),
+              operatorSymbol(operator),
+              _y,
+            )
+            x.extensionValue = true
+            return x.value
+          }
+
           _y = BigNum.divideExact(y.value, BigNum(100.00))
           if (tokenMatcher(operator, Plus)) {
             _y = BigNum.multiply(_y, x.value)
@@ -417,21 +617,31 @@ class TapeParser extends BaseParser {
           throw "Error: This operator is not yet supported"
         }
         catch(e){
+          x.value = previousValue
+          x.extensionValue = previousExtension
           evaluationError(y, e)
           return x
         }
         
       })
       
-      const { value, seperator } = postfix.payload
-      if( value === null ||
-          value !==  BigNum(_y).toFixedDecimal() //string comparison
-      ){
-        Object.assign(postfix, {
-          formatting: "%" + seperator + BigNum(_y).toFixedDecimal(),
-          ws: 0,
-          padding: 0,
-        })
+      if(_y !== undefined) {
+        try {
+          const { value, seperator } = postfix.payload
+          const formattedPercentage = extensionPercentage
+            ? percentageValue(_y)
+            : BigNum(_y).toFixedDecimal()
+          if(value === null || value !== formattedPercentage) {
+            Object.assign(postfix, {
+              formatting: "%" + seperator + formattedPercentage,
+              ws: 0,
+              padding: 0,
+            })
+          }
+        }
+        catch(error) {
+          evaluationError(postfix, error)
+        }
       }
       return result
     }
@@ -480,7 +690,7 @@ class TapeParser extends BaseParser {
           },
           { GATE: ()=> depth > 0,
            	ALT: ()=>{
-              aggregate = $.SUBRULE($.aggregate, {ARGS: [lhs.value, padding]})
+              aggregate = $.SUBRULE($.aggregate, {ARGS: [lhs, padding]})
               if(aggregate){
                 tokens.push(aggregate)
                 padding = format(tokens, padding)
@@ -495,7 +705,14 @@ class TapeParser extends BaseParser {
         DEF: ()=>{
           let nl = $.CONSUME(NewLine)
       	  return $.ACTION(()=>{
-            const value = lhs.value.toLocaleString()
+            let value
+            try {
+              value = displayValue(lhs)
+            }
+            catch(error) {
+              evaluationError(lhs, error)
+              return
+            }
             const length = value.length - this.decimalDigits + 1
             if(padding < length){
               padding = length + this.minPad
@@ -503,7 +720,7 @@ class TapeParser extends BaseParser {
             }
             return {
               type: TokenType.Insert,
-              value: value.toLocaleString(),
+              value: value,
               padding: padding + this.decimalDigits,
               node: nl,
             }
@@ -553,7 +770,7 @@ class TapeParser extends BaseParser {
       value = $.SUBRULE($.inlineExpression)
       result = $.ACTION(()=>{
         const key = variable.image
-        if(value === undefined){
+        if(!hasValue(value)){
           evaluationError(variable, 'Incomplete assignment.')
           return
         }
@@ -561,8 +778,16 @@ class TapeParser extends BaseParser {
           Object.assign(variable, {style: ['Error'], tooltip: 'Already defined.'})
         }
         else {
-          this._vars[key] = value
-          Object.assign(variable, {tooltip: BigNum(value).toFixedDecimal()})
+          try {
+            this._vars[key] = value.value
+            this._varExtensions[key] = isExtensionValue(value)
+            Object.assign(variable, {tooltip: fixedValue(value)})
+          }
+          catch(error) {
+            delete this._vars[key]
+            delete this._varExtensions[key]
+            evaluationError(variable, error)
+          }
         }
         //not required in ast
         //return { [key]: value.toString() }
@@ -574,7 +799,7 @@ class TapeParser extends BaseParser {
       let exp
       exp =  $.SUBRULE($.sumExpression)
       $.OPTION(()=>$.CONSUME(Annotation))
-      return exp?.value
+      return exp
     })
 
     this.RULE("sumExpression", ()=>{
@@ -649,12 +874,16 @@ class TapeParser extends BaseParser {
           endLine:   rparen.endLine,   endColumn:rparen.endColumn,
         }
         Object.assign(lparen, {style: ['ClearMark'], node: rparen})
-        Object.assign(rparen, {value: exp, node: node})
+        Object.assign(rparen, {
+          value: exp?.value,
+          extensionValue: isExtensionValue(exp),
+          node: node,
+        })
         return rparen
       })
     })
 
-    this.RULE("aggregate", (lhsValue, padding)=> {
+    this.RULE("aggregate", (lhs, padding)=> {
       let nl, seperator, number, identifier
       //seperator = $.LA(0)
       nl = $.CONSUME(NewLine)
@@ -674,14 +903,21 @@ class TapeParser extends BaseParser {
               if(key in this._vars){
                 Object.assign(identifier, {style: ['Error'], tooltip: 'Already defined.'})
               }
-              else if(
-                lhsValue.toFixedDecimal() !== 
-                number.value.toFixedDecimal()
-              ){
-                this._vars[key] = lhsValue
-              }
-              else{
-                this._vars[key] = number.value
+              else {
+                try {
+                  if(isExtensionValue(lhs) !== isExtensionValue(number) ||
+                    fixedValue(lhs) !== fixedValue(number)) {
+                    this._vars[key] = lhs.value
+                    this._varExtensions[key] = isExtensionValue(lhs)
+                  }
+                  else{
+                    this._vars[key] = number.value
+                    this._varExtensions[key] = isExtensionValue(number)
+                  }
+                }
+                catch(error) {
+                  evaluationError(identifier, error)
+                }
               }
             })
           }},
@@ -696,33 +932,44 @@ class TapeParser extends BaseParser {
           startLine: nl.startLine,     startColumn: nl.startColumn, 
           endLine:   number.endLine,   endColumn:number.endColumn,
         }
-        //string comparison
-        if(lhsValue.toLocaleString() !== number.value.toLocaleString()){
-          Object.assign(number, {
-            formatting: lhsValue.toLocaleString(), 
-            style: 'Result',
-          })
-        }
-        else {
-          if(seperator.endColumn != number.endColumn){
-              Object.assign(seperator, {
-              formatting: '═'.repeat(number.endColumn),
-              padding: -seperator.startColumn,
-              ws: seperator.startColumn,
+        try {
+          const lhsDisplay = displayValue(lhs)
+          const numberDisplay = displayValue(number)
+          //string comparison
+          if(lhsDisplay !== numberDisplay){
+            Object.assign(number, {
+              formatting: lhsDisplay, 
               style: 'Result',
             })
           }
-          Object.assign(number, {type: TokenType.Block, style: ['Result'], node: node})
+          else {
+            if(seperator.endColumn != number.endColumn){
+                Object.assign(seperator, {
+                formatting: '═'.repeat(number.endColumn),
+                padding: -seperator.startColumn,
+                ws: seperator.startColumn,
+                style: 'Result',
+              })
+            }
+            Object.assign(number, {type: TokenType.Block, style: ['Result'], node: node})
+          }
+        }
+        catch(error) {
+          evaluationError(number, error)
         }
         return number
       })
     })
     
     this.RULE("quark", ()=>{
-      return $.OR([
+      let prefix, token, postfix
+      if(this.extensionEnabled) prefix = $.OPTION(()=>$.CONSUME(ExtensionPrefix))
+      token = $.OR([
         { ALT: ()=>$.SUBRULE($.factor) },
         { ALT: ()=>$.SUBRULE($.var) }
       ])
+      if(this.extensionEnabled) postfix = $.OPTION2(()=>$.CONSUME(ExtensionPostfix))
+      return $.ACTION(()=>applyDecorators(token, prefix, postfix))
     })
     
     this.RULE("atom", ()=>{
@@ -759,17 +1006,35 @@ class TapeParser extends BaseParser {
         })
 
         if(key in this._vars && this._vars[key] !== undefined){
-          const value = negetive ? this._vars[key].negated() : this._vars[key]
-          Object.assign(identifier, {
-            value: value,
-            defined: true,
-            style: negetive ? ['NegetiveLiteral']: [identifier.tokenType.name],
-            tooltip: BigNum(value).toFixedDecimal(),
-          })
+          const extensionValue = this._varExtensions[key] === true
+          const originalValue = this._vars[key]
+          try {
+            const value = negetive
+              ? extensionValue
+                ? adapterCall("negate", originalValue)
+                : originalValue.negated()
+              : originalValue
+            Object.assign(identifier, {
+              value: value,
+              extensionValue,
+              defined: true,
+              style: negetive ? ['NegetiveLiteral']: [identifier.tokenType.name],
+            })
+            Object.assign(identifier, {tooltip: fixedValue(identifier)})
+          }
+          catch(error) {
+            Object.assign(identifier, {
+              value: originalValue,
+              extensionValue,
+              defined: true,
+            })
+            evaluationError(identifier, error)
+          }
         }  
         else {
           Object.assign(identifier, {
             value: BigNum(0.00),
+            extensionValue: false,
             defined: false,
             style: ['Error'],
             tooltip: 'Undefined variable. Using 0.00 as value.'
@@ -787,14 +1052,19 @@ class TapeParser extends BaseParser {
 
       negetive = $.OPTION(()=>$.CONSUME(Minus))
       lastToken = $.LA(0)
-      number = $.CONSUME(NumberLiteral)
+      number = this.extensionEnabled
+        ? $.OR([
+          {ALT:()=> $.CONSUME(NumberLiteral)},
+          {ALT:()=> $.CONSUME(ExtensionLiteral)},
+        ])
+        : $.CONSUME(NumberLiteral)
       /*number = $.OR([
         {ALT:()=> $.CONSUME(NumberLiteral)},
         {ALT:()=> $.CONSUME(Infinite)}
       ])*/
 
       return $.ACTION(()=>{
-        if(!number?.payload?.parse){
+        if(!number?.payload){
           evaluationError(number ?? negetive ?? lastToken, 'Incomplete number.')
           return
         }
@@ -803,13 +1073,35 @@ class TapeParser extends BaseParser {
           let lines = number.startLine - lastToken.endLine
           ws = ws - (lines == 0 ? lastToken.endColumn : 0) 
         }
-        //const value = negetive ? -BigNum(number.image) : BigNum(number.image)
-        const value = negetive ? number.payload.parse.negated() : number.payload.parse
-        Object.assign(number, {
-          value: value,
-          style: value.isNegative() ? ['NegetiveLiteral'] : [number.tokenType.name], 
-          ws: ws-1,
-        })
+        const extensionLiteral = tokenMatcher(number, ExtensionLiteral)
+        try {
+          if(extensionLiteral && number.payload.error) throw number.payload.error
+          let value = extensionLiteral ? number.payload.value : number.payload.parse
+          if(negetive) {
+            value = extensionLiteral ? adapterCall("negate", value) : value.negated()
+          }
+          const negative = extensionLiteral
+            ? Boolean(adapterCall("isNegative", value))
+            : value.isNegative()
+          Object.assign(number, {
+            value: value,
+            extensionValue: extensionLiteral,
+            style: negative ? ['NegetiveLiteral'] : [number.tokenType.name], 
+            ws: ws-1,
+          })
+          if(extensionLiteral) {
+            const formatting = number.payload.formatting ?? String(adapterCall("formatLiteral", value))
+            if(number.image !== formatting) Object.assign(number, {formatting})
+          }
+        }
+        catch(error) {
+          Object.assign(number, {
+            value: BigNum(0),
+            extensionValue: false,
+            ws: ws-1,
+          })
+          evaluationError(number, error)
+        }
         return number
       })
     })
@@ -819,8 +1111,27 @@ class TapeParser extends BaseParser {
   
 }
 
-// reuse the same parser instance.
-const parser = new TapeParser([])
+// Keep the native grammar byte-for-byte compatible. Build the extended
+// lexer/parser lazily only when calculateTape receives a non-null extension.
+const parser = new TapeParser(nativeTokens, false)
+let extendedRuntime = null
+
+function selectRuntime(extension) {
+  if(!extension) {
+    activeExtension = null
+    return {lexer: TapeLexer, parser}
+  }
+  activeExtension = extension
+  extensionMatcherDiagnostics = []
+  reportedMatcherFailures = new Set()
+  if(!extendedRuntime) {
+    extendedRuntime = {
+      lexer: new Lexer(extensionTokens, lexerOptions),
+      parser: new TapeParser(extensionTokens, true),
+    }
+  }
+  return extendedRuntime
+}
 
 function changeLocale(format, decimalDigits = 2){
   BigNumEnv.initLocale(format);
@@ -837,4 +1148,11 @@ export const QwikTape = {
   diagramBuilder: chevrotain.createSyntaxDiagramsCode,
   ERR: {NOALT: chevrotain.NoViableAltException},
   changeLocale: changeLocale,
+  selectRuntime,
+  clearExtension() {
+    activeExtension = null
+  },
+  extensionDiagnostics() {
+    return extensionMatcherDiagnostics.map((diagnostic)=>({...diagnostic}))
+  },
 }

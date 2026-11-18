@@ -22,6 +22,14 @@ for (const [name, fixture] of Object.entries(golden.enterCases)) {
       selectionEnd: fixture.selectionStart,
       settings: fixture.settings,
     });
+    const withNullExtension = applyBeforeInput({
+      inputType: "insertParagraph",
+      text: fixture.text,
+      selectionStart: fixture.selectionStart,
+      selectionEnd: fixture.selectionStart,
+      settings: { ...fixture.settings, extension: null },
+    });
+    assert.deepEqual(withNullExtension, actual);
     assert.equal(actual.handled, true);
     assert.equal(actual.text, fixture.resultText);
     assert.equal(actual.selectionStart, fixture.selectionAfter);
@@ -72,6 +80,12 @@ for (const [name, fixture] of Object.entries(golden.deletionCases)) {
       selectionStart: fixture.selectionStart,
       settings: fixture.settings,
     });
+    const withNullExtension = removeResultBlockAt({
+      text: fixture.text,
+      selectionStart: fixture.selectionStart,
+      settings: { ...fixture.settings, extension: null },
+    });
+    assert.deepEqual(withNullExtension, actual);
     assert.equal(actual.text, fixture.resultText);
     assert.equal(actual.selectionStart, fixture.selectionAfter);
     assert.equal(actual.selectionEnd, fixture.selectionAfter);

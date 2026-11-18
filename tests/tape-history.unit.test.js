@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyTapeEdits, calculateTape } from "../app/src/main/assets/tape-engine.js";
+import { applyTapeEdits, calculateTape as calculateTapeCore } from "../app/src/main/assets/tape-engine.js";
 import { TapeHistory } from "../app/src/main/assets/tape-history.js";
 
 function reparse(text) {
-  const result = calculateTape({ text });
+  const result = calculateTapeCore({ text });
+  assert.deepEqual(calculateTapeCore({ text, extension: null }), result);
   return applyTapeEdits(text, result.edits.filter((edit) => edit.kind === "replace-token"));
 }
 

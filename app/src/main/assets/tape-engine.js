@@ -1,6 +1,7 @@
 import { QwikTape } from "./tape-parser.js";
 
 const RESULT_SEPARATOR = "═";
+const EXTENSION_ERROR_PLACEHOLDER = "?";
 
 function styleList(style) {
   if (style === undefined) return [];
@@ -11,7 +12,44 @@ function decimalText(value) {
   return value?.toString?.() ?? String(value);
 }
 
-function publicToken(token) {
+function extensionText(token, extension, decimalDigits, padding) {
+  if (!token?.extensionValue) return decimalText(token?.value);
+  try {
+    const adapter = extension?.valueAdapter;
+    if (typeof adapter?.fixedValue !== "function") {
+      throw new TypeError("extension.valueAdapter.fixedValue is required");
+    }
+    return String(adapter.fixedValue(token.value, {decimalDigits, padding}));
+  }
+  catch(error) {
+    token.style = ["ErrorLiteral", "Error"];
+    token.tooltip = token.tooltip ? `${token.tooltip}\n${error}` : error;
+    return EXTENSION_ERROR_PLACEHOLDER;
+  }
+}
+
+function extensionVariableText(name, value, parser, extension, decimalDigits, padding, diagnostics) {
+  if (!parser._varExtensions[name]) return decimalText(value);
+  try {
+    const adapter = extension?.valueAdapter;
+    if (typeof adapter?.fixedValue !== "function") {
+      throw new TypeError("extension.valueAdapter.fixedValue is required");
+    }
+    return String(adapter.fixedValue(value, {decimalDigits, padding}));
+  } catch (error) {
+    diagnostics.push({
+      kind: "evaluation",
+      message: String(error),
+      variable: name,
+    });
+    return EXTENSION_ERROR_PLACEHOLDER;
+  }
+}
+
+function publicToken(token, extension, decimalDigits, padding) {
+  const value = token.value === undefined
+    ? undefined
+    : extensionText(token, extension, decimalDigits, padding);
   return {
     type: token.tokenType?.name,
     image: token.image,
@@ -26,16 +64,18 @@ function publicToken(token) {
     whitespace: token.ws,
     styles: styleList(token.style),
     tooltip: token.tooltip === undefined ? undefined : String(token.tooltip),
-    value: token.value === undefined ? undefined : decimalText(token.value),
+    value,
   };
 }
 
-function publicError(error) {
+function publicError(error, extension, decimalDigits, padding) {
   return {
     kind: "parser",
     name: error.name,
     message: error.message,
-    token: error.token ? publicToken(error.token) : undefined,
+    token: error.token
+      ? publicToken(error.token, extension, decimalDigits, padding)
+      : undefined,
   };
 }
 
@@ -98,19 +138,36 @@ export function calculateTape({
   locale = "1,234,567.89",
   decimalDigits = 2,
   padding = 10,
+  extension = null,
 } = {}) {
   let lex;
+  let runtime;
   try {
     const source = typeof text === "string" ? text : String(text ?? "");
     const safeDigits = Math.min(50, Math.max(0, Number(decimalDigits) || 0));
     const safePadding = Math.max(1, Number(padding) || 1);
     QwikTape.changeLocale(locale, safeDigits);
+    runtime = QwikTape.selectRuntime(extension);
 
-    lex = QwikTape.lexer.tokenize(source);
-    QwikTape.parser.input = lex.tokens;
-    const ast = QwikTape.parser.tape({ decimalDigits: safeDigits, padding: safePadding }) ?? [];
+    let ast;
+    try {
+      lex = runtime.lexer.tokenize(source);
+      runtime.parser.input = lex.tokens;
+      ast = runtime.parser.tape({
+        decimalDigits: safeDigits,
+        padding: safePadding,
+        extension,
+      }) ?? [];
+    } finally {
+      QwikTape.clearExtension();
+    }
 
-    const tokens = lex.tokens.map(publicToken);
+    const tokens = lex.tokens.map((token) => publicToken(
+      token,
+      extension,
+      safeDigits,
+      safePadding,
+    ));
     const edits = [
       ...lex.tokens
         .filter((token) => token.formatting !== undefined || token.padding !== undefined)
@@ -127,7 +184,21 @@ export function calculateTape({
         message: token.tooltip || "Invalid tape value",
         token,
       }));
-
+    const adapterDiagnostics = [];
+    const variables = Object.fromEntries(
+      Object.entries(runtime.parser._vars).map(([name, value]) => [
+        name,
+        extensionVariableText(
+          name,
+          value,
+          runtime.parser,
+          extension,
+          safeDigits,
+          safePadding,
+          adapterDiagnostics,
+        ),
+      ]),
+    );
     const diagnostics = [
       ...lex.errors.map((error) => ({
         kind: "lexer",
@@ -135,16 +206,20 @@ export function calculateTape({
         message: error.message,
         offset: error.offset,
       })),
-      ...QwikTape.parser.errors.map(publicError),
+      ...runtime.parser.errors.map((error) => publicError(
+        error,
+        extension,
+        safeDigits,
+        safePadding,
+      )),
+      ...(extension ? QwikTape.extensionDiagnostics() : []),
       ...tokenDiagnostics,
+      ...adapterDiagnostics,
     ];
-
-    const variables = Object.fromEntries(
-      Object.entries(QwikTape.parser._vars).map(([name, value]) => [name, decimalText(value)]),
-    );
 
     return { edits, tokens, diagnostics, variables };
   } catch (error) {
+    QwikTape.clearExtension();
     return engineFailure(error, lex);
   }
 }
