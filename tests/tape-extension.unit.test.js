@@ -88,7 +88,7 @@ function insertedValues(result) {
 }
 
 test("omitted and null extensions match main across full seeded outputs", () => {
-  const expectedMainDigest = "1feb93bf11ef15c31db0a3ed95248635e50ad7473960ea846069a91736aa4831";
+  const expectedMainDigest = "2a0be2c4bff38f96c1cbb5089f1e7dedd0701fb8e2fb16b9f5f043c445bf6b8f";
   const corpusSize = 4_039;
   const alphabet = "0123456789+-*/×÷^%()= abcdef\n.,";
   let state = 0xc011ab1e;
@@ -248,4 +248,44 @@ test("a later variable fixedValue failure becomes a diagnostic", () => {
   assert.equal(result.diagnostics.some((item) => item.kind === "engine"), false);
   assert.ok(result.diagnostics.some((item) => /late fixed value failure/.test(item.message)));
   assert.ok(Object.hasOwn(result.variables, "a"));
+});
+
+test("opaque extension values cannot escalate serialization failures", () => {
+  for (const [name, failOnCall] of [["token", 2], ["variable", 3]]) {
+    let fixedValueCalls = 0;
+    const opaqueValue = {
+      amount: 9,
+      toString() { throw new Error("opaque toString must not run"); },
+    };
+    const extension = {
+      ...fakeExtension,
+      matchLiteral(text, offset) {
+        return text.startsWith("u9", offset)
+          ? { length: 2, value: opaqueValue }
+          : fakeExtension.matchLiteral(text, offset);
+      },
+      valueAdapter: {
+        ...fakeExtension.valueAdapter,
+        fixedValue(value) {
+          fixedValueCalls += 1;
+          if (fixedValueCalls === failOnCall) throw new Error(`hostile ${name} fixed value`);
+          return String(amount(value));
+        },
+      },
+    };
+    const result = calculateTape({
+      text: "a = 5\n100\n+ 200\n\nx = u9\n",
+      extension,
+    });
+
+    assert.equal(result.diagnostics.some((item) => item.kind === "engine"), false, name);
+    assert.ok(result.diagnostics.some((item) => new RegExp(`hostile ${name} fixed value`).test(item.message)), name);
+    assert.equal(result.variables.a, "5", name);
+    assert.deepEqual(insertedValues(result), ["300.00"], name);
+    if (name === "token") {
+      assert.equal(result.tokens.find((token) => token.image === "u9").value, "?", name);
+    } else {
+      assert.equal(result.variables.x, "?", name);
+    }
+  }
 });

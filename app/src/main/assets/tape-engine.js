@@ -1,6 +1,7 @@
 import { QwikTape } from "./tape-parser.js";
 
 const RESULT_SEPARATOR = "═";
+const EXTENSION_ERROR_PLACEHOLDER = "?";
 
 function styleList(style) {
   if (style === undefined) return [];
@@ -23,7 +24,7 @@ function extensionText(token, extension, decimalDigits, padding) {
   catch(error) {
     token.style = ["ErrorLiteral", "Error"];
     token.tooltip = token.tooltip ? `${token.tooltip}\n${error}` : error;
-    return decimalText(token.value);
+    return EXTENSION_ERROR_PLACEHOLDER;
   }
 }
 
@@ -41,7 +42,7 @@ function extensionVariableText(name, value, parser, extension, decimalDigits, pa
       message: String(error),
       variable: name,
     });
-    return decimalText(value);
+    return EXTENSION_ERROR_PLACEHOLDER;
   }
 }
 
