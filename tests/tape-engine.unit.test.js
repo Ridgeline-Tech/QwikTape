@@ -58,3 +58,36 @@ test("division fallback rounds an exact tie half-even at 113 fractional digits",
   const divisor = BigNum(`2${"0".repeat(113)}`);
   assert.equal(BigNum.divide(BigNum(1), divisor).toFixed(113), `0.${"0".repeat(113)}`);
 });
+
+test("oversized powers fail quickly and leave the accumulator unchanged", () => {
+  const started = performance.now();
+  const result = calculateTape({ text: "2\n^ 99999999\n" });
+  const elapsed = performance.now() - started;
+
+  assert.ok(elapsed < 1000, `oversized power guard took ${elapsed.toFixed(1)} ms`);
+  assert.equal(
+    result.edits.find((edit) => edit.kind === "insert-result")?.value,
+    "2.00",
+  );
+  assert.match(
+    result.diagnostics.find((item) => item.kind === "evaluation")?.message ?? "",
+    /power is too large/,
+  );
+
+  const normal = calculateTape({ text: "2\n^ 10\n" });
+  assert.equal(
+    normal.edits.find((edit) => edit.kind === "insert-result")?.value,
+    "1,024.00",
+  );
+});
+
+test("invalid locale falls back to default without leaking prior call state", () => {
+  const insertValue = (locale) => calculateTape({
+    text: "1234567\n+ 1234567\n",
+    locale,
+  }).edits.find((edit) => edit.kind === "insert-result")?.value;
+
+  assert.equal(insertValue("1.234.567,89"), "2.469.134,00");
+  assert.equal(insertValue("not-a-locale"), "2,469,134.00");
+  assert.equal(insertValue("1'234'567.89"), "2'469'134.00");
+});

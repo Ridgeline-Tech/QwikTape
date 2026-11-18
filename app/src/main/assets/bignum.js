@@ -1,6 +1,8 @@
 import Decimal from "./vendor/decimal.mjs";
 
 const DIVISION_DECIMAL_PLACES = 113;
+const MAX_POWER_EXPONENT = 10000;
+const MAX_POWER_INTEGER_DIGITS = 10000;
 const DecimalNumber = Decimal.clone({
   precision: 1000,
   rounding: Decimal.ROUND_HALF_EVEN,
@@ -104,14 +106,25 @@ BigNum.divide = (left, right) => {
 
 BigNum.power = (left, right) => {
   if (!right.isInteger() || right.isNegative()) throw new RangeError("invalid operation");
+  if (right.greaterThan(MAX_POWER_EXPONENT)) throw new RangeError("power is too large");
+
+  const magnitude = left.abs();
+  // Decimal's base-10 exponent plus one is a conservative digit bound for
+  // magnitudes >= 1. Reject oversized output before pow/toFixed can allocate it.
+  if (
+    magnitude.greaterThanOrEqualTo(1)
+    && right.times(magnitude.e + 1).greaterThan(MAX_POWER_INTEGER_DIGITS)
+  ) {
+    throw new RangeError("power result is too large");
+  }
   return left.pow(right);
 };
 
 const BigNumEnv = {
   prec: DIVISION_DECIMAL_PLACES,
   initLocale(format = NUMBER_LOCALE_STRING) {
-    const next = this.getLocale(format);
-    if (next) Object.assign(locale, next);
+    const next = this.getLocale(format) ?? this.getLocale(NUMBER_LOCALE_STRING);
+    Object.assign(locale, next);
     return locale;
   },
   getLocale(format) {

@@ -121,6 +121,7 @@ See `NOTICE` for third-party attribution and the dated port change notice.
 ```
 * Expressions use operator precedence. `myvar = 100 + 200 × 3` myvar is `700`.
 * Decimal arithmetic preserves results such as [`0.1 + 0.2 = 0.3`](https://0.30000000000000004.com/); non-terminating division follows the documented finite, half-even precision fallback.
+* Power operations are limited to a nonnegative integer exponent of 10,000 and a conservative maximum of 10,000 integer result digits so an oversized calculation becomes a normal skipped error instead of blocking the editor.
 * Export your tape as PDF <img src="src/assets/pdf.svg" width="24">.
 
 <br></br>
