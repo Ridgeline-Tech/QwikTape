@@ -36,6 +36,11 @@ Android soft-keyboard Enter is handled through `beforeinput` as well as
 hardware key events. It intentionally adds no Pocket Builder construction
 features.
 
+As in the upstream Sciter editor, Enter materializes a result by replacing the
+remainder of the active line. Press Enter at the end of a calculation line to
+preserve all of its text; characters after a mid-line caret are intentionally
+discarded for upstream compatibility.
+
 Tape data stays in the app's local WebView storage. Android backup and device
 transfer are disabled (`allowBackup=false`), with explicit cloud, transfer,
 and legacy full-backup exclusions for every app data domain.
@@ -46,7 +51,7 @@ not configured or performed by this repository change.
 
 ### Golden behavior method
 
-The behavior oracle is upstream commit
+The parser/evaluator reference is upstream commit
 `e781115a9dd2168e4933f95ed7eb88c82a5c9318` (tree
 `f739c7e31c24cdfc36b7965e7502af35c3248e92`).
 `tests/run-upstream-golden.qjs.js` runs the unchanged upstream
@@ -57,6 +62,11 @@ BigDecimal behavior, grammar tests, and `src/storage/seeds.js` inputs remain
 the pinned upstream code. Its captured reference is
 `tests/upstream-e781115a.golden.json`.
 
+Formatting edits, result insertion, Enter, and result-block deletion are a
+plain JavaScript reimplementation of the upstream Sciter editor behavior.
+They are checked against the captured upstream parser/evaluator data; the
+upstream renderer/editor itself is not executed by this port or test layer.
+
 The current capture passed 14 locale groups, 196 cases, and 980 assertions.
 It can be regenerated from the repository's `tests/` directory with the pinned
 QuickJS binary:
@@ -65,11 +75,15 @@ QuickJS binary:
 qjs --bignum --std run-upstream-golden.qjs.js upstream-e781115a.golden.json
 ```
 
-CI compares full rendered output (formatted text, result and separator rows,
-edit positions, token values/styles, variables, and diagnostics) for focused
-cases, all 14 locale formats, and both complete seed tapes. Caret-scoped Enter
-has separate oracle cases for multiple pending chains and text following a
-chain, in addition to focused unit tests.
+QuickJS regeneration is a manual provenance step. CI does not install or run
+QuickJS; it tests the port against the committed reference JSON.
+
+CI compares the reimplemented rendered output (formatted text, result and
+separator rows, edit positions, token values/styles, variables, and
+diagnostics) for focused cases, all 14 locale formats, and both complete seed
+tapes. Caret-scoped Enter has separate oracle cases for multiple pending
+chains, text following a chain, and mid-line remainder replacement, in addition
+to focused unit tests.
 
 ### Build and test
 

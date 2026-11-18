@@ -26,13 +26,24 @@ export function applyEnter({ text, selectionStart, selectionEnd, settings = {} }
     return { handled: true, text: nextText, selectionStart: caret, selectionEnd: caret };
   }
 
-  const source = `${text.slice(0, selectionStart)}\n${text.slice(selectionEnd)}`;
+  let source = `${text.slice(0, selectionStart)}\n${text.slice(selectionEnd)}`;
   const caret = selectionStart + 1;
-  const result = calculateTape({ text: source, ...settings });
-  const formattingEdits = result.edits.filter((edit) => edit.kind === "replace-token");
-  const selectedInsert = result.edits.find(
+  let result = calculateTape({ text: source, ...settings });
+  let selectedInsert = result.edits.find(
     (edit) => edit.kind === "insert-result" && edit.start === caret,
   );
+  const lineEnd = text.indexOf("\n", selectionEnd);
+  const remainderEnd = lineEnd < 0 ? text.length : lineEnd;
+  if (selectedInsert && remainderEnd > selectionEnd) {
+    // Match upstream Sciter: materializing a total replaces the remainder of
+    // the active line rather than joining those characters to the result.
+    source = `${text.slice(0, selectionStart)}\n${text.slice(remainderEnd)}`;
+    result = calculateTape({ text: source, ...settings });
+    selectedInsert = result.edits.find(
+      (edit) => edit.kind === "insert-result" && edit.start === caret,
+    );
+  }
+  const formattingEdits = result.edits.filter((edit) => edit.kind === "replace-token");
   const edits = selectedInsert ? [...formattingEdits, selectedInsert] : formattingEdits;
   const nextText = applyTapeEdits(source, edits);
   const nextCaret = selectionAfterEdits(caret, edits);
@@ -50,6 +61,13 @@ export function applyBeforeInput(input) {
     return null;
   }
   return applyEnter(input);
+}
+
+export function bindHistoryControl(button, direction, restore) {
+  const keepEditorFocus = (event) => event.preventDefault();
+  button.addEventListener("pointerdown", keepEditorFocus);
+  button.addEventListener("mousedown", keepEditorFocus);
+  button.addEventListener("click", () => restore(direction));
 }
 
 export function removeResultBlockAt({ text, selectionStart, settings = {} }) {

@@ -5,7 +5,11 @@ import {
   resultBlockAt,
 } from "./tape-engine.js";
 import { TapeHistory } from "./tape-history.js";
-import { applyBeforeInput, removeResultBlockAt } from "./tape-input.js";
+import {
+  applyBeforeInput,
+  bindHistoryControl,
+  removeResultBlockAt,
+} from "./tape-input.js";
 
 const STORAGE_KEY = "qwiktape.android.v1";
 const tapeElement = document.querySelector("#tape");
@@ -343,8 +347,8 @@ tapeElement.addEventListener("keydown", (event) => {
 });
 
 document.querySelector("#new-button").addEventListener("click", createTape);
-document.querySelector("#undo-button").addEventListener("click", () => restoreFromHistory("undo"));
-document.querySelector("#redo-button").addEventListener("click", () => restoreFromHistory("redo"));
+bindHistoryControl(document.querySelector("#undo-button"), "undo", restoreFromHistory);
+bindHistoryControl(document.querySelector("#redo-button"), "redo", restoreFromHistory);
 document.querySelector("#rename-button").addEventListener("click", () => renameTape());
 document.querySelector("#browse-button").addEventListener("click", () => {
   renderBrowseList();

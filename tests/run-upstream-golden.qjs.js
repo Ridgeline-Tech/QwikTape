@@ -158,19 +158,17 @@ function formattingEdit(token) {
   };
 }
 
-function resultEdit(edit, text) {
+function resultEdit(edit) {
   const value = String(edit.value);
   const width = Math.max(edit.padding ?? 0, value.length);
   const start = edit.node.endOffset + 1;
-  const following = text.slice(start);
-  const trailingNewline = following && !following.startsWith("\n") ? "\n" : "";
   return {
     kind: "insert-result",
     start,
     end: start,
     value,
     width,
-    replacement: `${"═".repeat(width)}\n${value.padStart(width, " ")}${trailingNewline}`,
+    replacement: `${"═".repeat(width)}\n${value.padStart(width, " ")}`,
     node: {
       startOffset: edit.node.startOffset,
       endOffset: edit.node.endOffset,
@@ -232,7 +230,7 @@ function parseReference(text, settings = {}) {
     .map(formattingEdit);
   const insertEdits = edits
     .filter((edit) => edit?.type === tapeModule.QwikTape.tokenType.Insert)
-    .map((edit) => resultEdit(edit, text));
+    .map(resultEdit);
   return {
     edits: edits.map(normalizeEdit),
     formattingEdits,
@@ -251,10 +249,20 @@ function fixture(text, settings = {}) {
 }
 
 function enterFixture(text, selectionStart, settings = {}) {
-  const source = `${text.slice(0, selectionStart)}\n${text.slice(selectionStart)}`;
+  let source = `${text.slice(0, selectionStart)}\n${text.slice(selectionStart)}`;
   const caret = selectionStart + 1;
-  const result = parseReference(source, settings);
-  const selectedInsert = result.insertEdits.find((edit) => edit.start === caret);
+  let result = parseReference(source, settings);
+  let selectedInsert = result.insertEdits.find((edit) => edit.start === caret);
+  const lineEnd = text.indexOf("\n", selectionStart);
+  const remainderEnd = lineEnd < 0 ? text.length : lineEnd;
+  if (selectedInsert && remainderEnd > selectionStart) {
+    // Sciter's editor replaces the rest of the active line when it inserts a
+    // result block. This interaction layer reimplements that editor behavior;
+    // the parser/evaluator data above still comes from unchanged upstream code.
+    source = `${text.slice(0, selectionStart)}\n${text.slice(remainderEnd)}`;
+    result = parseReference(source, settings);
+    selectedInsert = result.insertEdits.find((edit) => edit.start === caret);
+  }
   const edits = [...result.formattingEdits, ...(selectedInsert ? [selectedInsert] : [])];
   return {
     text,
@@ -331,6 +339,7 @@ const localeCases = Object.fromEntries(localeFormats.map((locale) => {
 
 const scopedEnterText = "100\n+ 200\nnote line\n50\n+ 5";
 const selectedEnterText = "100\n+ 200\nnote line";
+const midLineEnterText = "100\n+ 200\n";
 const deletionText = "      100.00\n+     200.00\n════════════\n      300.00";
 const deletionStart = deletionText.indexOf("═");
 
@@ -347,6 +356,7 @@ const golden = {
   enterCases: {
     scopedPendingTotals: enterFixture(scopedEnterText, scopedEnterText.length),
     selectedChainBeforeText: enterFixture(selectedEnterText, selectedEnterText.indexOf("\nnote line")),
+    midLineDropsRemainder: enterFixture(midLineEnterText, midLineEnterText.indexOf("200") + 1),
   },
   deletionCases: {
     resultBlock: deleteFixture(

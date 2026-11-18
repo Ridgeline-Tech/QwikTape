@@ -4083,6 +4083,30 @@
       },
       "resultText": "      100.00\n+     200.00\n════════════\n      300.00\nnote line",
       "selectionAfter": 51
+    },
+    "midLineDropsRemainder": {
+      "text": "100\n+ 200\n",
+      "selectionStart": 7,
+      "settings": {},
+      "source": "100\n+ 2\n\n",
+      "selectedInsert": {
+        "kind": "insert-result",
+        "start": 8,
+        "end": 8,
+        "value": "102.00",
+        "width": 12,
+        "replacement": "════════════\n      102.00",
+        "node": {
+          "startOffset": 7,
+          "endOffset": 7,
+          "startLine": 2,
+          "startColumn": 4,
+          "endLine": 2,
+          "endColumn": 4
+        }
+      },
+      "resultText": "      100.00\n+       2.00\n════════════\n      102.00\n",
+      "selectionAfter": 51
     }
   },
   "deletionCases": {
