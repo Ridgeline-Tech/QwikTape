@@ -292,16 +292,18 @@ test("opaque extension values cannot escalate serialization failures", () => {
 
 test("extension throws of non-Error values with a throwing toString stay contained", () => {
   const hostile = () => ({ toString() { throw new Error("hostile toString must not escape"); } });
+  let variableCalls = 0;
   const adapter = (override) => ({ valueAdapter: { ...fakeExtension.valueAdapter, ...override } });
   const cases = [
     ["literal matcher", { matchLiteral() { throw hostile(); } }, "100\n+ 200\n"],
     ["evaluate", adapter({ evaluate() { throw hostile(); } }), "u1\n+ u2\n"],
     ["token fixedValue", adapter({ fixedValue() { throw hostile(); } }), "100\n+ u2\n"],
-    ["variable fixedValue", adapter({ fixedValue() { throw hostile(); } }), "x = u1\n"],
+    ["variable fixedValue", adapter({ fixedValue(value) { if (++variableCalls >= 3) throw hostile(); return String(amount(value)); } }), "a = 5\n100\n+ 200\n\nx = u1\n", /Unprintable error/],
   ];
-  for (const [name, override, text] of cases) {
+  for (const [name, override, text, expected] of cases) {
     const result = calculateTape({ text, extension: { ...fakeExtension, ...override } });
     assert.equal(result.diagnostics.some((item) => item.kind === "engine"), false, name);
     assert.ok(result.tokens.length > 0, name);
+    if (expected) assert.ok(result.diagnostics.some((item) => expected.test(item.message)), name);
   }
 });
