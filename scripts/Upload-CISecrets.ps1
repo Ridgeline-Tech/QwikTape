@@ -59,8 +59,9 @@ if ($reviewerRules.Count -ne 1 -or $reviewerRules[0].reviewers.Count -ne 1 -or
 }
 $branchPolicies = & $gh api --hostname github.com "repos/$apiRepo/environments/$environmentName/deployment-branch-policies" | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0 -or $branchPolicies.total_count -ne 1 -or
-    $branchPolicies.branch_policies[0].name -ne 'main') {
-    throw 'The QwikTape Environment must allow only the main deployment branch.'
+    $branchPolicies.branch_policies[0].name -ne 'main' -or
+    $branchPolicies.branch_policies[0].type -ne 'branch') {
+    throw 'The QwikTape Environment must allow only the main deployment branch (type=branch, not a tag).'
 }
 
 $wrapped = Get-Content -LiteralPath $localRecord -Raw | ConvertFrom-Json

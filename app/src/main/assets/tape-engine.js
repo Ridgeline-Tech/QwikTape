@@ -1,4 +1,4 @@
-import { QwikTape } from "./tape-parser.js";
+import { QwikTape, safeErrorText } from "./tape-parser.js";
 
 const RESULT_SEPARATOR = "═";
 const EXTENSION_ERROR_PLACEHOLDER = "?";
@@ -23,7 +23,7 @@ function extensionText(token, extension, decimalDigits, padding) {
   }
   catch(error) {
     token.style = ["ErrorLiteral", "Error"];
-    token.tooltip = token.tooltip ? `${token.tooltip}\n${error}` : error;
+    token.tooltip = token.tooltip ? `${token.tooltip}\n${safeErrorText(error)}` : safeErrorText(error);
     return EXTENSION_ERROR_PLACEHOLDER;
   }
 }
@@ -39,7 +39,7 @@ function extensionVariableText(name, value, parser, extension, decimalDigits, pa
   } catch (error) {
     diagnostics.push({
       kind: "evaluation",
-      message: String(error),
+      message: safeErrorText(error),
       variable: name,
     });
     return EXTENSION_ERROR_PLACEHOLDER;
