@@ -3,6 +3,17 @@ import { default as chevrotain } from "./vendor/chevrotain.min.js";
 import { BigNum, BigNumEnv } from "./bignum.js";
 
 // ----------------- lexer -----------------
+// Extensions may throw anything, including values whose toString throws.
+// Diagnostics must never let that escape and discard unrelated tape results.
+export function safeErrorText(error) {
+  try {
+    return String(error)
+  }
+  catch (_stringifyError) {
+    return "Unprintable error"
+  }
+}
+
 let activeExtension = null
 let extensionMatcherDiagnostics = []
 let reportedMatcherFailures = new Set()
@@ -13,7 +24,7 @@ function recordMatcherFailure(kind, error, offset) {
   extensionMatcherDiagnostics.push({
     kind: 'extension',
     name: 'ExtensionMatcherError',
-    message: `${kind} failed: ${String(error)}`,
+    message: `${kind} failed: ${safeErrorText(error)}`,
     offset,
   })
 }
@@ -450,7 +461,7 @@ class TapeParser extends BaseParser {
 
     const evaluationError = (token, error)=>{
       if(!token) return
-      const message = String(error)
+      const message = safeErrorText(error)
       Object.assign(token, {
         style: ['ErrorLiteral', 'Error'],
         tooltip: token.tooltip ? token.tooltip + "\n" + message : message,

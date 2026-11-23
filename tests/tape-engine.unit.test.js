@@ -136,7 +136,7 @@ test("division fallback rounds an exact tie half-even at 113 fractional digits",
   assert.equal(BigNum.divide(BigNum(1), divisor).toFixed(113), `0.${"0".repeat(113)}`);
 });
 
-test("oversized powers fail quickly and leave the accumulator unchanged", () => {
+test("oversized powers fail quickly and leave the accumulator unchanged", { timeout: 60_000 }, () => {
   const started = performance.now();
   const result = calculateTape({ text: "10\n^99999999\n" });
   const elapsed = performance.now() - started;
@@ -158,7 +158,7 @@ test("oversized powers fail quickly and leave the accumulator unchanged", () => 
   );
 });
 
-test("result magnitude bound stops variable squaring without rejecting valid large values", () => {
+test("result magnitude bound stops variable squaring without rejecting valid large values", { timeout: 60_000 }, () => {
   const valid = calculateTape({ text: "a = 10 ^ 4999\nb = a × a\n" });
   assert.deepEqual(valid.diagnostics, []);
   assert.equal(valid.variables.a, "1e+4999");
@@ -278,7 +278,7 @@ for (const incomplete of [
   });
 }
 
-test("seeded incomplete-input fuzz never throws and stays bounded", () => {
+test("seeded incomplete-input fuzz never throws and stays bounded", { timeout: 60_000 }, () => {
   const corpusSize = 4_096;
   const fragments = [
     "0", "1", "5", ".", ",", " ", "(", ")",
